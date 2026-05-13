@@ -14,6 +14,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bigk4huna.swipedelete
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
 
   KeyboardExtension:
     type: app-extension
@@ -24,6 +27,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bigk4huna.swipedelete.keyboard
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
     info:
       path: KeyboardExtension/Info.plist
       properties:
