@@ -38,10 +38,8 @@ jobs:
 
           # Install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.PROVISIONING_PROFILE }}" | base64 --decode > profile.mobileprovision
-          UUID=$(grep -o '[0-9a-f-]\{36\}' profile.mobileprovision | head -1)
-          echo "Profile UUID: $UUID"
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.mobileprovision
+          echo "${{ secrets.PROVISIONING_PROFILE }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/d70e8412-7c64-47fc-bc10-3f2aeb7d0137.mobileprovision
           ls ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Archive
