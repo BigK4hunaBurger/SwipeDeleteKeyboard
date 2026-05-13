@@ -46,6 +46,8 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "${{ secrets.PROVISIONING_PROFILE }}" | base64 --decode > \
             ~/Library/MobileDevice/Provisioning\ Profiles/d70e8412-7c64-47fc-bc10-3f2aeb7d0137.mobileprovision
+          echo "${{ secrets.PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/f9098798-096d-402d-b09b-1aafb104001c.mobileprovision
           ls ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Archive
@@ -77,6 +79,8 @@ jobs:
             <dict>
               <key>com.bigk4huna.swipedelete</key>
               <string>SwipeDeleteKeyboard AppStore</string>
+            <key>com.bigk4huna.swipedelete.keyboard</key>
+              <string>SwipeDeleteKeyboard Keyboard AppStore</string>
             </dict>
           </dict>
           </plist>
