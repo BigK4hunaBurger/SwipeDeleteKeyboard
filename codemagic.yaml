@@ -10,25 +10,20 @@ workflows:
         bundle_identifier: com.bigk4huna.swipedelete
       vars:
         XCODE_SCHEME: SwipeDeleteKeyboard
-        XCODE_WORKSPACE: SwipeDeleteKeyboard.xcworkspace
+        XCODE_WORKSPACE: SwipeDeleteKeyboard.xcodeproj
       xcode: latest
       cocoapods: default
 
     scripts:
-      - name: Install Tuist
+      - name: Install XcodeGen & generate project
         script: |
-          curl -Ls https://install.tuist.io | bash
-          export PATH="$HOME/.tuist/bin:$PATH"
-
-      - name: Generate Xcode project
-        script: |
-          export PATH="$HOME/.tuist/bin:$PATH"
-          tuist generate --no-open
+          brew install xcodegen
+          xcodegen generate
 
       - name: Build & Archive
         script: |
           xcodebuild \
-            -workspace "$XCODE_WORKSPACE" \
+            -project "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -archivePath build/SwipeDeleteKeyboard.xcarchive \

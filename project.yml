@@ -1,0 +1,37 @@
+name: SwipeDeleteKeyboard
+options:
+  bundleIdPrefix: com.bigk4huna.swipedelete
+  deploymentTarget:
+    iOS: "16.0"
+
+targets:
+  SwipeDeleteKeyboard:
+    type: application
+    platform: iOS
+    sources: App
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bigk4huna.swipedelete
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+
+  KeyboardExtension:
+    type: app-extension
+    platform: iOS
+    sources: KeyboardExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bigk4huna.swipedelete.keyboard
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+    info:
+      path: KeyboardExtension/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: en-US
+            RequestsOpenAccess: false
+          NSExtensionPointIdentifier: com.apple.keyboard-input-mode
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
