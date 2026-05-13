@@ -44,26 +44,27 @@ jobs:
 
       - name: Archive
         run: |
+          set -o pipefail
           xcodebuild archive \
             -project SwipeDeleteKeyboard.xcodeproj \
             -scheme SwipeDeleteKeyboard \
             -configuration Release \
-            -archivePath build/SwipeDeleteKeyboard.xcarchive \
+            -archivePath $RUNNER_TEMP/SwipeDelete.xcarchive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="SwipeDeleteKeyboard AppStore" \
-            2>&1 | tail -30
+            PROVISIONING_PROFILE_SPECIFIER="SwipeDeleteKeyboard AppStore"
+          echo "Archive done:"
+          ls -la $RUNNER_TEMP/
 
       - name: Export IPA
         run: |
-          cat > exportOptions.plist << EOF
+          cat > /tmp/exportOptions.plist << 'PLISTEOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key><string>app-store</string>
-            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
             <key>signingStyle</key><string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
@@ -72,12 +73,13 @@ jobs:
             </dict>
           </dict>
           </plist>
-          EOF
+          PLISTEOF
           xcodebuild -exportArchive \
-            -archivePath build/SwipeDeleteKeyboard.xcarchive \
-            -exportPath build/ \
-            -exportOptionsPlist exportOptions.plist \
-            2>&1 | tail -20
+            -archivePath $RUNNER_TEMP/SwipeDelete.xcarchive \
+            -exportPath $RUNNER_TEMP/export \
+            -exportOptionsPlist /tmp/exportOptions.plist
+          echo "Export done:"
+          ls -la $RUNNER_TEMP/export/
 
       - name: Upload to TestFlight
         run: |
@@ -85,7 +87,7 @@ jobs:
           echo "=== find ipa ===" && find . -name "*.ipa" 2>/dev/null
           mkdir -p ~/.private_keys
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" > ~/.private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
-          IPA_PATH=$(find . -name "*.ipa" | head -1)
+          IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
           echo "IPA: $IPA_PATH"
           xcrun altool --upload-app \
             --type ios \
