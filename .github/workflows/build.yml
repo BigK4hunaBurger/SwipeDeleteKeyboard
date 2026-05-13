@@ -57,12 +57,7 @@ jobs:
             -project SwipeDeleteKeyboard.xcodeproj \
             -scheme SwipeDeleteKeyboard \
             -configuration Release \
-            -archivePath $RUNNER_TEMP/SwipeDelete.xcarchive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_IDENTITY="iPhone Distribution" \
-            PROVISIONING_PROFILE="d70e8412-7c64-47fc-bc10-3f2aeb7d0137" \
-            PROVISIONING_PROFILE_SPECIFIER="SwipeDeleteKeyboard AppStore"
+            -archivePath $RUNNER_TEMP/SwipeDelete.xcarchive
           echo "Archive done:"
           ls -la $RUNNER_TEMP/
 

@@ -9,6 +9,8 @@ targets:
     type: application
     platform: iOS
     sources: App
+    dependencies:
+      - target: KeyboardExtension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bigk4huna.swipedelete
@@ -19,6 +21,11 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "iPhone Distribution"
+        DEVELOPMENT_TEAM: M4MTXQ56CT
+        PROVISIONING_PROFILE: d70e8412-7c64-47fc-bc10-3f2aeb7d0137
+        PROVISIONING_PROFILE_SPECIFIER: "SwipeDeleteKeyboard AppStore"
 
   KeyboardExtension:
     type: app-extension
@@ -31,6 +38,11 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "iPhone Distribution"
+        DEVELOPMENT_TEAM: M4MTXQ56CT
+        PROVISIONING_PROFILE: f9098798-096d-402d-b09b-1aafb104001c
+        PROVISIONING_PROFILE_SPECIFIER: "SwipeDeleteKeyboard Keyboard AppStore"
     info:
       path: KeyboardExtension/Info.plist
       properties:
