@@ -75,8 +75,6 @@ jobs:
             <dict>
               <key>com.bigk4huna.swipedelete</key>
               <string>SwipeDeleteKeyboard AppStore</string>
-            <key>com.bigk4huna.swipedelete.keyboard</key>
-              <string>SwipeDeleteKeyboard Keyboard AppStore</string>
             </dict>
           </dict>
           </plist>
