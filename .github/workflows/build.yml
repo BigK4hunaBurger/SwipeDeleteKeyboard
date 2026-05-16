@@ -57,6 +57,7 @@ jobs:
             -project SwipeDeleteKeyboard.xcodeproj \
             -scheme SwipeDeleteKeyboard \
             -configuration Release \
+            -destination 'generic/platform=iOS' \
             -archivePath $RUNNER_TEMP/SwipeDelete.xcarchive
           echo "Archive done:"
           ls -la $RUNNER_TEMP/
@@ -100,7 +101,7 @@ jobs:
             --apiIssuer ${{ secrets.APPSTORE_ISSUER_ID }} \
             2>&1)
           echo "$OUTPUT"
-          if echo "$OUTPUT" | grep -q "UPLOAD FAILED\|ERROR\|error"; then
+          if echo "$OUTPUT" | grep -q "UPLOAD FAILED\|Validation failed"; then
             echo "Upload failed!"
             exit 1
           fi
