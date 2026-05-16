@@ -47,6 +47,7 @@ targets:
     info:
       path: KeyboardExtension/Info.plist
       properties:
+        CFBundleDisplayName: SwipeDelete Keyboard
         NSExtension:
           NSExtensionAttributes:
             IsASCIICapable: false
