@@ -89,15 +89,19 @@ jobs:
 
       - name: Upload to TestFlight
         run: |
-          echo "=== workspace contents ===" && ls -la
-          echo "=== find ipa ===" && find . -name "*.ipa" 2>/dev/null
           mkdir -p ~/.private_keys
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" > ~/.private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
           IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
           echo "IPA: $IPA_PATH"
-          xcrun altool --upload-app \
+          OUTPUT=$(xcrun altool --upload-app \
             --type ios \
             --file "$IPA_PATH" \
             --apiKey ${{ secrets.APPSTORE_KEY_ID }} \
             --apiIssuer ${{ secrets.APPSTORE_ISSUER_ID }} \
-            2>&1
+            2>&1)
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "UPLOAD FAILED\|ERROR\|error"; then
+            echo "Upload failed!"
+            exit 1
+          fi
+          echo "Upload succeeded!"
