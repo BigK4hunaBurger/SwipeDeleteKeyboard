@@ -1,6 +1,7 @@
 import Foundation
 import KanaKanjiConverterModuleWithDefaultDictionary
 
+@MainActor
 final class KanjiConverter {
     static let shared = KanjiConverter()
 
