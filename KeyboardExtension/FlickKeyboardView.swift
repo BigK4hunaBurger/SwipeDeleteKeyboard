@@ -327,37 +327,29 @@ struct FlickKeyboardView: View {
                     } else { onBackspace() }
                 },
                 onSlideDelete: { count in
+                    // 入力中なら確定してからスライド削除
                     if !composingText.isEmpty {
+                        onInsert(composingText)
                         composingText = ""; candidates = []
-                    } else {
-                        withAnimation(.easeOut(duration: 0.1)) { slideCount = 0 }
-                        onBackspaceSlide(count)
                     }
+                    withAnimation(.easeOut(duration: 0.1)) { slideCount = 0 }
+                    onBackspaceSlide(count)
                 },
                 onCountChange: { count in
-                    if composingText.isEmpty {
-                        withAnimation(.easeInOut(duration: 0.1)) { slideCount = count }
-                    }
+                    // 入力中でもカウント表示（スライド削除できるように）
+                    withAnimation(.easeInOut(duration: 0.1)) { slideCount = count }
                 }
             )
         }
     }
 
     private var spaceKey: some View {
-        Button(action: {
-            if !composingText.isEmpty {
-                let first = candidates.first ?? composingText
-                onInsert(first)
-                composingText = ""; candidates = []
-            } else {
-                onInsert("　")
-            }
-        }) {
+        Button(action: { onInsert("　") }) {
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color(UIColor.systemBackground))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
-                    Text(composingText.isEmpty ? "空白" : "確定")
+                    Text("空白")
                         .font(.system(size: 11))
                         .foregroundColor(Color(UIColor.label))
                 )
@@ -368,15 +360,19 @@ struct FlickKeyboardView: View {
     private var returnKey: some View {
         Button(action: {
             if !composingText.isEmpty {
-                onInsert(composingText); composingText = ""; candidates = []
+                // 入力中は先頭候補を確定
+                let first = candidates.first ?? composingText
+                onInsert(first)
+                composingText = ""; candidates = []
+            } else {
+                onReturn()
             }
-            onReturn()
         }) {
             RoundedRectangle(cornerRadius: 6)
                 .fill(Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
-                    Text("改行")
+                    Text(composingText.isEmpty ? "改行" : "確定")
                         .font(.system(size: 13))
                         .foregroundColor(Color(UIColor.label))
                 )
