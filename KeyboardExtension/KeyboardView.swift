@@ -277,7 +277,7 @@ struct KeyboardView: View {
 
     private func handleSpace() {
         flushJapanese()
-        onInsert(" ")
+        onInsert(mode == .romajiJapanese ? "　" : " ")
     }
 
     private func flushJapanese() {

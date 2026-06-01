@@ -6,10 +6,10 @@ enum FlickDirection { case center, up, right, down, left }
 
 struct FlickChars {
     let center: String
+    let left: String?
     let up: String?
     let right: String?
     let down: String?
-    let left: String?
 
     init(_ center: String, left: String? = nil, up: String? = nil,
          right: String? = nil, down: String? = nil) {
@@ -20,10 +20,10 @@ struct FlickChars {
     func char(for dir: FlickDirection) -> String? {
         switch dir {
         case .center: return center
+        case .left:   return left
         case .up:     return up
         case .right:  return right
         case .down:   return down
-        case .left:   return left
         }
     }
 }
@@ -39,47 +39,42 @@ struct FlickKey: View {
     @State private var isFlicking = false
     private let threshold: CGFloat = 22
 
-    private var selectedChar: String {
-        chars.char(for: dir) ?? chars.center
-    }
-
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 5)
-                .fill(isActive ? Color(UIColor.systemGray3) : Color(UIColor.systemBackground))
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isActive ? Color(UIColor.systemGray2) : Color(UIColor.systemBackground))
                 .shadow(color: .black.opacity(0.3), radius: 0, x: 0, y: 1)
 
             if isFlicking {
-                Text(selectedChar)
-                    .font(.system(size: 22, weight: .bold))
+                Text(chars.char(for: dir) ?? chars.center)
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.accentColor)
             } else {
-                // Cross-shaped hint layout
-                VStack(spacing: 1) {
+                // 十字型ヒント
+                VStack(spacing: 0) {
                     Text(chars.up ?? " ")
-                        .font(.system(size: 9))
+                        .font(.system(size: 8))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
-                    HStack(spacing: 1) {
+                    HStack(spacing: 0) {
                         Text(chars.left ?? " ")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 12)
+                            .frame(width: 11)
                         Text(chars.center)
-                            .font(.system(size: 18))
+                            .font(.system(size: 17))
                             .foregroundColor(Color(UIColor.label))
-                            .frame(minWidth: 18)
+                            .frame(minWidth: 16)
                         Text(chars.right ?? " ")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 12)
+                            .frame(width: 11)
                     }
                     Text(chars.down ?? " ")
-                        .font(.system(size: 9))
+                        .font(.system(size: 8))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                 }
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 46)
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .local)
                 .onChanged { v in
@@ -91,21 +86,16 @@ struct FlickKey: View {
                         if abs(dx) > abs(dy) { dir = dx > 0 ? .right : .left }
                         else { dir = dy < 0 ? .up : .down }
                     } else {
-                        isFlicking = false
-                        dir = .center
+                        isFlicking = false; dir = .center
                     }
                 }
                 .onEnded { v in
                     let dx = v.translation.width, dy = v.translation.height
                     let dist = sqrt(dx * dx + dy * dy)
                     let finalDir: FlickDirection
-                    if dist < threshold {
-                        finalDir = .center
-                    } else if abs(dx) > abs(dy) {
-                        finalDir = dx > 0 ? .right : .left
-                    } else {
-                        finalDir = dy < 0 ? .up : .down
-                    }
+                    if dist < threshold { finalDir = .center }
+                    else if abs(dx) > abs(dy) { finalDir = dx > 0 ? .right : .left }
+                    else { finalDir = dy < 0 ? .up : .down }
                     onSelect(chars.char(for: finalDir) ?? chars.center)
                     isActive = false; isFlicking = false; dir = .center
                 }
@@ -128,7 +118,7 @@ struct FlickKeyboardView: View {
     @State private var composingText = ""
     @State private var candidates: [String] = []
 
-    // Standard Japanese flick: left=い/き/し..., up=う/く/す..., right=え/け/せ..., down=お/こ/そ...
+    // 標準フリック配列: 左=い, 上=う, 右=え, 下=お
     private let kanaGrid: [[FlickChars]] = [
         [FlickChars("あ", left:"い", up:"う", right:"え", down:"お"),
          FlickChars("か", left:"き", up:"く", right:"け", down:"こ"),
@@ -154,18 +144,20 @@ struct FlickKeyboardView: View {
             ["へ","べ","ぺ"],["ほ","ぼ","ぽ"],
         ]
         for cycle in pairs {
-            for (i, ch) in cycle.enumerated() {
-                m[ch] = cycle[(i + 1) % cycle.count]
-            }
+            for (i, ch) in cycle.enumerated() { m[ch] = cycle[(i + 1) % cycle.count] }
         }
         return m
     }()
+
+    private let keySize: CGFloat = 50
+    private let funcWidth: CGFloat = 52
 
     var body: some View {
         VStack(spacing: 0) {
             topBar
 
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: 6) {
+                // かなグリッド (3列×4行)
                 VStack(spacing: 4) {
                     ForEach(kanaGrid.indices, id: \.self) { row in
                         HStack(spacing: 4) {
@@ -174,25 +166,38 @@ struct FlickKeyboardView: View {
                                 FlickKey(chars: chars) { char in
                                     handleSelect(char, fromKey: chars)
                                 }
+                                .frame(height: keySize)
                             }
                         }
                     }
                 }
-                .padding(.leading, 8)  // 左端余白
+                .padding(.leading, 12)
 
+                // ファンクション列 (順番: ⌫, 空白, ABC, 改行)
                 VStack(spacing: 4) {
-                    backspaceKey.frame(height: 46)
-                    spaceKey.frame(height: 46)
-                    returnKey.frame(height: 46)
-                    switchKey.frame(height: 46)
+                    backspaceKey
+                        .frame(width: funcWidth, height: keySize)
+                    spaceKey
+                        .frame(width: funcWidth, height: keySize)
+                    switchKey      // ABC を3番目に
+                        .frame(width: funcWidth, height: keySize)
+                    returnKey      // 改行を4番目に
+                        .frame(width: funcWidth, height: keySize)
                 }
-                .padding(.leading, 4)
-                .padding(.trailing, 8)  // 右端余白
-                .frame(width: 76)
+                .padding(.trailing, 12)
             }
             .padding(.vertical, 4)
+            .padding(.bottom, 8)  // 下部の見切れ防止
         }
         .background(Color(UIColor.systemGray5))
+        .onChange(of: composingText) { newText in
+            // 入力と同時に自動変換
+            if newText.isEmpty {
+                candidates = []
+            } else {
+                candidates = KanjiConverter.shared.candidates(for: newText)
+            }
+        }
         .onChange(of: slideCount) { newCount in
             if newCount > 0 { contextBefore = getContextBefore() }
         }
@@ -204,8 +209,6 @@ struct FlickKeyboardView: View {
     private var topBar: some View {
         if !candidates.isEmpty {
             candidateBar
-        } else if !composingText.isEmpty {
-            composingBar
         } else if slideCount > 0 {
             deletionPreview
         } else {
@@ -213,69 +216,27 @@ struct FlickKeyboardView: View {
         }
     }
 
-    private var composingBar: some View {
-        HStack(spacing: 8) {
-            Text(composingText)
-                .font(.system(size: 16))
-                .foregroundColor(Color(UIColor.label))
-                .underline()
-                .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(Color(UIColor.systemBackground))
-                .cornerRadius(4)
-
-            Spacer()
-
-            Button(action: {
-                let t = composingText
-                candidates = KanjiConverter.shared.candidates(for: t)
-            }) {
-                Text("変換")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(Color.accentColor)
-                    .cornerRadius(6)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: {
-                onInsert(composingText); composingText = ""
-            }) {
-                Text("確定")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.label))
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(Color(UIColor.systemGray3))
-                    .cornerRadius(6)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 8)
-        .frame(height: 44)
-        .background(Color(UIColor.systemGray6))
-    }
-
     private var candidateBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                Button(action: { candidates = [] }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12))
+                // 入力中のひらがなを左端に表示
+                if !composingText.isEmpty {
+                    Text(composingText)
+                        .font(.system(size: 13))
                         .foregroundColor(Color(UIColor.secondaryLabel))
-                        .padding(8)
-                        .background(Color(UIColor.systemGray4))
-                        .cornerRadius(6)
+                        .padding(.leading, 4)
                 }
-                .buttonStyle(.plain)
 
                 ForEach(candidates, id: \.self) { candidate in
                     Button(action: {
-                        onInsert(candidate); composingText = ""; candidates = []
+                        onInsert(candidate)
+                        composingText = ""
+                        candidates = []
                     }) {
                         Text(candidate)
                             .font(.system(size: 16))
                             .foregroundColor(Color(UIColor.label))
-                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
                             .background(Color(UIColor.systemBackground))
                             .cornerRadius(6)
                     }
@@ -315,18 +276,16 @@ struct FlickKeyboardView: View {
 
     private var backspaceKey: some View {
         ZStack {
-            Image(systemName: "delete.left")
-                .font(.system(size: 16))
-                .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
-                .cornerRadius(5)
+            RoundedRectangle(cornerRadius: 6)
+                .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+            Image(systemName: "delete.left")
+                .font(.system(size: 15))
+                .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
                 .allowsHitTesting(false)
             BackspaceButton(
                 onTap: {
                     if !composingText.isEmpty {
-                        candidates = []
                         composingText = String(composingText.dropLast())
                     } else { onBackspace() }
                 },
@@ -350,17 +309,22 @@ struct FlickKeyboardView: View {
     private var spaceKey: some View {
         Button(action: {
             if !composingText.isEmpty {
-                let t = composingText
-                candidates = KanjiConverter.shared.candidates(for: t)
-            } else { onInsert("　") }
+                // スペースで先頭候補を確定
+                let first = candidates.first ?? composingText
+                onInsert(first)
+                composingText = ""; candidates = []
+            } else {
+                onInsert("　")
+            }
         }) {
-            Text(composingText.isEmpty ? "空白" : "変換")
-                .font(.system(size: 13))
-                .foregroundColor(Color(UIColor.label))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(composingText.isEmpty ? Color(UIColor.systemBackground) : Color.accentColor.opacity(0.2))
-                .cornerRadius(5)
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(UIColor.systemBackground))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                .overlay(
+                    Text(composingText.isEmpty ? "空白" : "確定")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(UIColor.label))
+                )
         }
         .buttonStyle(.plain)
     }
@@ -372,13 +336,14 @@ struct FlickKeyboardView: View {
             }
             onReturn()
         }) {
-            Text("改行")
-                .font(.system(size: 13))
-                .foregroundColor(Color(UIColor.label))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(UIColor.systemGray3))
-                .cornerRadius(5)
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                .overlay(
+                    Text("改行")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(UIColor.label))
+                )
         }
         .buttonStyle(.plain)
     }
@@ -388,13 +353,14 @@ struct FlickKeyboardView: View {
             if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
             onSwitchToEnglish()
         }) {
-            Text("ABC")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color(UIColor.label))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(UIColor.systemGray3))
-                .cornerRadius(5)
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                .overlay(
+                    Text("ABC")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(UIColor.label))
+                )
         }
         .buttonStyle(.plain)
     }
@@ -407,29 +373,21 @@ struct FlickKeyboardView: View {
     }
 
     private func handleSelect(_ char: String, fromKey chars: FlickChars) {
-        candidates = []
         if chars.center == "゛" {
             if !composingText.isEmpty {
                 if let last = composingText.last, let next = dakutenCycle[last] {
                     composingText = String(composingText.dropLast()) + String(next)
-                } else {
-                    composingText += char
-                }
+                } else { composingText += char }
             } else {
                 let context = getContextBefore()
                 if let last = context.last, let next = dakutenCycle[last] {
                     onBackspace(); onInsert(String(next))
-                } else {
-                    composingText += char
-                }
+                } else { composingText += char }
             }
         } else if isHiragana(char) {
             composingText += char
         } else {
-            // 句読点・記号は即確定
-            if !composingText.isEmpty {
-                onInsert(composingText); composingText = ""
-            }
+            if !composingText.isEmpty { onInsert(composingText); composingText = "" }
             onInsert(char)
         }
     }
