@@ -1,4 +1,4 @@
-name: Build & Upload to TestFlight
+name: Build & Upload Ad Hoc IPA
 
 on:
   push:
@@ -24,15 +24,13 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Install certificate and profile
+      - name: Install certificate and profiles
         run: |
-          # Create temp keychain
           security create-keychain -p "temp" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "temp" build.keychain
           security set-keychain-settings -t 3600 -u build.keychain
 
-          # Import certificate
           echo "${{ secrets.DISTRIBUTION_P12 }}" | base64 --decode > certificate.p12
           security import certificate.p12 \
             -k build.keychain \
@@ -42,12 +40,11 @@ jobs:
             -S apple-tool:,apple: \
             -s -k "temp" build.keychain
 
-          # Install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.PROVISIONING_PROFILE }}" | base64 --decode > \
-            ~/Library/MobileDevice/Provisioning\ Profiles/d70e8412-7c64-47fc-bc10-3f2aeb7d0137.mobileprovision
-          echo "${{ secrets.PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode > \
-            ~/Library/MobileDevice/Provisioning\ Profiles/f9098798-096d-402d-b09b-1aafb104001c.mobileprovision
+          echo "${{ secrets.ADHOC_PROVISIONING_PROFILE }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/e5ceffe8-35f4-45cc-8ba2-3c1b65022f93.mobileprovision
+          echo "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/dc4ea33f-dae7-422a-b485-615e51821c9d.mobileprovision
           ls ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Archive
@@ -69,12 +66,14 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
-            <key>method</key><string>app-store</string>
+            <key>method</key><string>ad-hoc</string>
             <key>signingStyle</key><string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>com.bigk4huna.swipedelete</key>
-              <string>SwipeDeleteKeyboard AppStore</string>
+              <string>SwipeDeleteKeyboard AdHoc</string>
+              <key>com.bigk4huna.swipedelete.keyboard</key>
+              <string>SwipeDeleteKeyboard Keyboard AdHoc</string>
             </dict>
           </dict>
           </plist>
@@ -86,21 +85,20 @@ jobs:
           echo "Export done:"
           ls -la $RUNNER_TEMP/export/
 
-      - name: Upload to TestFlight
+      - name: Upload IPA to Diawi
         run: |
-          mkdir -p ~/.private_keys
-          echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" > ~/.private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
           IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
           echo "IPA: $IPA_PATH"
-          OUTPUT=$(xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey ${{ secrets.APPSTORE_KEY_ID }} \
-            --apiIssuer ${{ secrets.APPSTORE_ISSUER_ID }} \
-            2>&1)
-          echo "$OUTPUT"
-          if echo "$OUTPUT" | grep -q "UPLOAD FAILED\|Validation failed"; then
-            echo "Upload failed!"
-            exit 1
-          fi
-          echo "Upload succeeded!"
+          RESPONSE=$(curl -s -F "file=@$IPA_PATH" \
+            -F "token=${{ secrets.DIAWI_TOKEN }}" \
+            https://upload.diawi.com/)
+          echo "Response: $RESPONSE"
+          JOB=$(echo $RESPONSE | python3 -c "import sys,json; print(json.load(sys.stdin)['job'])")
+          echo "Job: $JOB"
+          sleep 15
+          STATUS=$(curl -s "https://upload.diawi.com/status?token=${{ secrets.DIAWI_TOKEN }}&job=$JOB")
+          echo "Status: $STATUS"
+          LINK=$(echo $STATUS | python3 -c "import sys,json; print(json.load(sys.stdin).get('link',''))")
+          echo "============================================"
+          echo "Install link: $LINK"
+          echo "============================================"
