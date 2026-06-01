@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum InputMode { case english, japanese }
+enum InputMode { case english, romajiJapanese, flickJapanese }
 
 struct KeyboardView: View {
     let onInsert: (String) -> Void
@@ -25,6 +25,23 @@ struct KeyboardView: View {
     ]
 
     var body: some View {
+        if mode == .flickJapanese {
+            FlickKeyboardView(
+                onInsert: onInsert,
+                onBackspace: onBackspace,
+                onBackspaceSlide: onBackspaceSlide,
+                onReturn: onReturn,
+                onSwitchToEnglish: { mode = .english },
+                getContextBefore: getContextBefore
+            )
+        } else {
+            qwertyKeyboard
+        }
+    }
+
+    // MARK: - QWERTY layout
+
+    private var qwertyKeyboard: some View {
         VStack(spacing: 0) {
             topBar
 
@@ -51,19 +68,17 @@ struct KeyboardView: View {
         }
         .background(Color(UIColor.systemGray5))
         .onChange(of: slideCount) { newCount in
-            if newCount > 0 {
-                contextBefore = getContextBefore()
-            }
+            if newCount > 0 { contextBefore = getContextBefore() }
         }
     }
 
-    // MARK: - Top bar (deletion preview or romaji hint)
+    // MARK: - Top bar
 
     @ViewBuilder
     private var topBar: some View {
         if slideCount > 0 {
             deletionPreview
-        } else if mode == .japanese && !pendingRomaji.isEmpty {
+        } else if mode == .romajiJapanese && !pendingRomaji.isEmpty {
             romajiHint
         } else {
             Color.clear.frame(height: 28)
@@ -72,35 +87,24 @@ struct KeyboardView: View {
 
     private var deletionPreview: some View {
         let chars = Array(contextBefore)
-        let totalChars = chars.count
-        let deleteCount = min(slideCount, totalChars)
-        let keepCount = totalChars - deleteCount
-
-        let keepText = String(chars.prefix(keepCount))
-        let deleteText = String(chars.suffix(deleteCount))
-
-        let displayKeep = String(keepText.suffix(40 - min(deleteCount, 20)))
-        let displayDelete = String(deleteText.suffix(20))
+        let del = min(slideCount, chars.count)
+        let keepText = String(String(chars.prefix(chars.count - del)).suffix(20))
+        let delText = String(String(chars.suffix(del)).suffix(20))
 
         return HStack(spacing: 0) {
             Spacer(minLength: 8)
             HStack(spacing: 0) {
-                if !displayKeep.isEmpty {
-                    Text(displayKeep)
-                        .foregroundColor(Color(UIColor.label))
+                if !keepText.isEmpty {
+                    Text(keepText).foregroundColor(Color(UIColor.label))
                 }
-                if !displayDelete.isEmpty {
-                    Text(displayDelete)
-                        .foregroundColor(.white)
-                        .background(Color.red)
+                if !delText.isEmpty {
+                    Text(delText).foregroundColor(.white).background(Color.red)
                 }
-                Text("｜")
-                    .foregroundColor(Color(UIColor.label))
+                Text("｜").foregroundColor(Color(UIColor.label))
             }
             .font(.system(size: 14))
             .lineLimit(1)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10).padding(.vertical, 4)
             .background(Color(UIColor.systemBackground))
             .cornerRadius(6)
             Spacer(minLength: 8)
@@ -115,8 +119,7 @@ struct KeyboardView: View {
             Text(pendingRomaji)
                 .font(.caption)
                 .foregroundColor(Color(UIColor.secondaryLabel))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 10).padding(.vertical, 4)
                 .background(Color(UIColor.systemBackground))
                 .clipShape(Capsule())
             Spacer()
@@ -164,15 +167,13 @@ struct KeyboardView: View {
                 .cornerRadius(5)
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .allowsHitTesting(false)
-
             BackspaceButton(
                 onTap: handleBackspace,
                 onSlideDelete: { count in
                     withAnimation(.easeOut(duration: 0.1)) { slideCount = 0 }
                     onBackspaceSlide(count)
-                    if mode == .japanese {
-                        converter.flush()
-                        pendingRomaji = ""
+                    if mode == .romajiJapanese {
+                        converter.flush(); pendingRomaji = ""
                     }
                 },
                 onCountChange: { count in
@@ -185,7 +186,7 @@ struct KeyboardView: View {
 
     private var spaceKey: some View {
         Button(action: { handleSpace() }) {
-            Text(mode == .japanese ? "スペース" : "space")
+            Text(mode == .romajiJapanese ? "スペース" : "space")
                 .font(.system(size: 15))
                 .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
@@ -197,10 +198,7 @@ struct KeyboardView: View {
     }
 
     private var returnKey: some View {
-        Button(action: {
-            flushJapanese()
-            onReturn()
-        }) {
+        Button(action: { flushJapanese(); onReturn() }) {
             Text("return")
                 .font(.system(size: 15))
                 .foregroundColor(Color(UIColor.label))
@@ -213,10 +211,7 @@ struct KeyboardView: View {
     }
 
     private var nextKeyboardButton: some View {
-        Button(action: {
-            flushJapanese()
-            onNextKeyboard()
-        }) {
+        Button(action: { flushJapanese(); onNextKeyboard() }) {
             Image(systemName: "globe")
                 .font(.system(size: 18))
                 .foregroundColor(Color(UIColor.label))
@@ -229,15 +224,25 @@ struct KeyboardView: View {
     }
 
     private var langToggleButton: some View {
-        Button(action: {
+        let label: String
+        switch mode {
+        case .english:        label = "あ"
+        case .romajiJapanese: label = "フリック"
+        case .flickJapanese:  label = "EN"
+        }
+        return Button(action: {
             flushJapanese()
-            mode = mode == .english ? .japanese : .english
+            switch mode {
+            case .english:        mode = .romajiJapanese
+            case .romajiJapanese: mode = .flickJapanese
+            case .flickJapanese:  mode = .english
+            }
         }) {
-            Text(mode == .english ? "JP" : "EN")
-                .font(.system(size: 14, weight: .semibold))
+            Text(label)
+                .font(.system(size: label.count > 2 ? 11 : 14, weight: .semibold))
                 .foregroundColor(Color(UIColor.label))
                 .frame(width: 42, height: 42)
-                .background(Color(UIColor.systemGray3))
+                .background(mode == .english ? Color(UIColor.systemGray3) : Color.accentColor.opacity(0.2))
                 .cornerRadius(5)
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
@@ -253,15 +258,17 @@ struct KeyboardView: View {
         switch mode {
         case .english:
             onInsert(char)
-        case .japanese:
+        case .romajiJapanese:
             let committed = converter.input(char)
             pendingRomaji = converter.pending
             if !committed.isEmpty { onInsert(committed) }
+        case .flickJapanese:
+            onInsert(char) // shouldn't reach here
         }
     }
 
     private func handleBackspace() {
-        if mode == .japanese && converter.deleteFromBuffer() {
+        if mode == .romajiJapanese && converter.deleteFromBuffer() {
             pendingRomaji = converter.pending
             return
         }
@@ -274,7 +281,7 @@ struct KeyboardView: View {
     }
 
     private func flushJapanese() {
-        guard mode == .japanese else { return }
+        guard mode == .romajiJapanese else { return }
         let result = converter.flush()
         pendingRomaji = ""
         if !result.isEmpty { onInsert(result) }
