@@ -26,6 +26,9 @@ class KeyboardViewController: UIInputViewController {
             },
             onNextKeyboard: { [weak self] in
                 self?.advanceToNextInputMode()
+            },
+            getContextBefore: { [weak self] in
+                self?.textDocumentProxy.documentContextBeforeInput ?? ""
             }
         )
 

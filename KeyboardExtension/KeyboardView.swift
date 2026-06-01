@@ -8,11 +8,13 @@ struct KeyboardView: View {
     let onBackspaceSlide: (Int) -> Void
     let onReturn: () -> Void
     let onNextKeyboard: () -> Void
+    let getContextBefore: () -> String
 
     @State private var mode: InputMode = .english
     @State private var isUppercase = false
-    @State private var slideCount = 0       // 0 = not in slide mode
-    @State private var pendingRomaji = ""   // shown as grey hint in Japanese mode
+    @State private var slideCount = 0
+    @State private var contextBefore = ""
+    @State private var pendingRomaji = ""
 
     private let converter = JapaneseConverter()
 
@@ -24,10 +26,8 @@ struct KeyboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Slide-delete indicator
-            slideIndicator
+            topBar
 
-            // Key rows
             ForEach(rows.indices, id: \.self) { row in
                 HStack(spacing: 5) {
                     if row == 2 { shiftKey }
@@ -40,7 +40,6 @@ struct KeyboardView: View {
                 .padding(.vertical, 3)
             }
 
-            // Bottom row
             HStack(spacing: 5) {
                 nextKeyboardButton
                 langToggleButton
@@ -50,46 +49,81 @@ struct KeyboardView: View {
             .padding(.horizontal, 3)
             .padding(.vertical, 3)
         }
-        .background(Color(.systemGroupedBackground))
-    }
-
-    // MARK: - Slide indicator
-
-    @ViewBuilder
-    private var slideIndicator: some View {
-        if slideCount > 0 {
-            HStack {
-                Spacer()
-                Text("← \(slideCount)文字削除")
-                    .font(.caption.bold())
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.red.opacity(0.85))
-                    .clipShape(Capsule())
-                Spacer()
-            }
-            .transition(.opacity)
-            .padding(.top, 4)
-        } else {
-            // Show pending romaji in Japanese mode
-            if mode == .japanese && !pendingRomaji.isEmpty {
-                HStack {
-                    Spacer()
-                    Text(pendingRomaji)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color(.systemGray5))
-                        .clipShape(Capsule())
-                    Spacer()
-                }
-                .padding(.top, 4)
-            } else {
-                Color.clear.frame(height: 26)
+        .background(Color(UIColor.systemGray5))
+        .onChange(of: slideCount) { newCount in
+            if newCount > 0 {
+                contextBefore = getContextBefore()
             }
         }
+    }
+
+    // MARK: - Top bar (deletion preview or romaji hint)
+
+    @ViewBuilder
+    private var topBar: some View {
+        if slideCount > 0 {
+            deletionPreview
+        } else if mode == .japanese && !pendingRomaji.isEmpty {
+            romajiHint
+        } else {
+            Color.clear.frame(height: 28)
+        }
+    }
+
+    private var deletionPreview: some View {
+        let context = contextBefore
+        let totalChars = context.unicodeScalars.count
+        let deleteCount = min(slideCount, totalChars)
+        let keepCount = totalChars - deleteCount
+
+        let keepText = String(context.unicodeScalars.prefix(keepCount)) ?? ""
+        let deleteText = String(context.unicodeScalars.suffix(deleteCount)) ?? ""
+
+        // Show at most last 40 chars to avoid overflow
+        let displayKeep = String(keepText.suffix(40 - min(deleteCount, 20)))
+        let displayDelete = String(deleteText.suffix(20))
+
+        return HStack(spacing: 0) {
+            Spacer(minLength: 8)
+            HStack(spacing: 0) {
+                if !displayKeep.isEmpty {
+                    Text(displayKeep)
+                        .foregroundColor(Color(UIColor.label))
+                }
+                if !displayDelete.isEmpty {
+                    Text(displayDelete)
+                        .foregroundColor(.white)
+                        .background(Color.red)
+                }
+                Text("｜")
+                    .foregroundColor(Color(UIColor.label))
+            }
+            .font(.system(size: 14))
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(6)
+            Spacer(minLength: 8)
+        }
+        .frame(height: 28)
+        .padding(.top, 4)
+    }
+
+    private var romajiHint: some View {
+        HStack {
+            Spacer()
+            Text(pendingRomaji)
+                .font(.caption)
+                .foregroundColor(Color(UIColor.secondaryLabel))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color(UIColor.systemBackground))
+                .clipShape(Capsule())
+            Spacer()
+        }
+        .frame(height: 28)
+        .padding(.top, 4)
     }
 
     // MARK: - Keys
@@ -99,10 +133,11 @@ struct KeyboardView: View {
         return Button(action: { handleLetter(key) }) {
             Text(label)
                 .font(.system(size: 17))
+                .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
-                .background(Color(.white))
+                .background(Color(UIColor.systemBackground))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -111,11 +146,11 @@ struct KeyboardView: View {
         Button(action: { isUppercase.toggle() }) {
             Image(systemName: isUppercase ? "shift.fill" : "shift")
                 .font(.system(size: 16))
+                .foregroundColor(isUppercase ? .white : Color(UIColor.label))
                 .frame(width: 42, height: 42)
-                .background(isUppercase ? Color.accentColor : Color(.systemGray4))
-                .foregroundColor(isUppercase ? .white : .primary)
+                .background(isUppercase ? Color.accentColor : Color(UIColor.systemGray3))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -124,11 +159,11 @@ struct KeyboardView: View {
         ZStack {
             Image(systemName: "delete.left")
                 .font(.system(size: 16))
-                .foregroundColor(slideCount > 0 ? .red : .primary)
+                .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
                 .frame(width: 42, height: 42)
-                .background(slideCount > 0 ? Color.red.opacity(0.15) : Color(.systemGray4))
+                .background(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .allowsHitTesting(false)
 
             BackspaceButton(
@@ -153,10 +188,11 @@ struct KeyboardView: View {
         Button(action: { handleSpace() }) {
             Text(mode == .japanese ? "スペース" : "space")
                 .font(.system(size: 15))
+                .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
-                .background(Color(.white))
+                .background(Color(UIColor.systemBackground))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -168,10 +204,11 @@ struct KeyboardView: View {
         }) {
             Text("return")
                 .font(.system(size: 15))
+                .foregroundColor(Color(UIColor.label))
                 .frame(width: 88, height: 42)
-                .background(Color(.systemGray4))
+                .background(Color(UIColor.systemGray3))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -183,10 +220,11 @@ struct KeyboardView: View {
         }) {
             Image(systemName: "globe")
                 .font(.system(size: 18))
+                .foregroundColor(Color(UIColor.label))
                 .frame(width: 42, height: 42)
-                .background(Color(.systemGray4))
+                .background(Color(UIColor.systemGray3))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -198,10 +236,11 @@ struct KeyboardView: View {
         }) {
             Text(mode == .english ? "JP" : "EN")
                 .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color(UIColor.label))
                 .frame(width: 42, height: 42)
-                .background(Color(.systemGray4))
+                .background(Color(UIColor.systemGray3))
                 .cornerRadius(5)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -243,6 +282,12 @@ struct KeyboardView: View {
     }
 }
 
+private extension String {
+    init?(_ scalars: Substring.UnicodeScalarView) {
+        self.init(scalars)
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
@@ -251,7 +296,8 @@ struct KeyboardView: View {
         onBackspace: { print("backspace") },
         onBackspaceSlide: { print("slide delete: \($0)") },
         onReturn: { print("return") },
-        onNextKeyboard: { print("next keyboard") }
+        onNextKeyboard: { print("next keyboard") },
+        getContextBefore: { "これはテスト文章です" }
     )
-    .frame(height: 260)
+    .frame(height: 280)
 }
