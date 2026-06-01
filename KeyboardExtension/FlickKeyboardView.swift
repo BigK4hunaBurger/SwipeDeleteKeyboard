@@ -47,7 +47,7 @@ struct FlickKey: View {
 
             if isFlicking {
                 Text(chars.char(for: dir) ?? chars.center)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.accentColor)
             } else {
                 VStack(spacing: 0) {
@@ -58,15 +58,15 @@ struct FlickKey: View {
                         Text(chars.left ?? " ")
                             .font(.system(size: 8))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 11)
+                            .frame(width: 10)
                         Text(chars.center)
-                            .font(.system(size: 17))
+                            .font(.system(size: 16))
                             .foregroundColor(Color(UIColor.label))
-                            .frame(minWidth: 16)
+                            .frame(minWidth: 14)
                         Text(chars.right ?? " ")
                             .font(.system(size: 8))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 11)
+                            .frame(width: 10)
                     }
                     Text(chars.down ?? " ")
                         .font(.system(size: 8))
@@ -117,6 +117,7 @@ struct FlickKeyboardView: View {
     @State private var contextBefore = ""
     @State private var composingText = ""
     @State private var candidates: [String] = []
+    @State private var isNumberMode = false
 
     // 標準フリック配列: 左=い, 上=う, 右=え, 下=お
     private let kanaGrid: [[FlickChars]] = [
@@ -134,6 +135,24 @@ struct FlickKeyboardView: View {
          FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ")],
     ]
 
+    // 数字・記号グリッド
+    private let numberGrid: [[FlickChars]] = [
+        [FlickChars("1", left:"！", up:"☆", right:"♪", down:"♡"),
+         FlickChars("2", left:"？", up:"…", right:"〜", down:"・"),
+         FlickChars("3", left:"「", up:"」", right:"『", down:"』")],
+        [FlickChars("4", left:"￥", up:"$", right:"€", down:"£"),
+         FlickChars("5", left:"%", up:"#", right:"&", down:"@"),
+         FlickChars("6", left:"＋", up:"−", right:"×", down:"÷")],
+        [FlickChars("7", left:"（", up:"）", right:"〔", down:"〕"),
+         FlickChars("8", left:"「", up:"」", right:"【", down:"】"),
+         FlickChars("9", left:"《", up:"》", right:"〈", down:"〉")],
+        [FlickChars(".", left:",", up:":", right:";", down:"…"),
+         FlickChars("0", left:"-", up:"〜", right:"ー", down:"_"),
+         FlickChars("@", left:"#", up:"*", right:"/", down:"~")],
+    ]
+
+    private var currentGrid: [[FlickChars]] { isNumberMode ? numberGrid : kanaGrid }
+
     private let dakutenCycle: [Character: Character] = {
         var m: [Character: Character] = [:]
         let pairs: [[Character]] = [
@@ -149,28 +168,32 @@ struct FlickKeyboardView: View {
         return m
     }()
 
-    private let keySize: CGFloat = 50
-    private let funcWidth: CGFloat = 52
+    // keySize=44, spacing=3 → 4行合計 = 4*44+3*3 = 185px
+    // 縦長キー = 44*2+3 = 91px × 2 + 3gap = 185px (一致)
+    // topBar44 + padding9 + grid185 = 238px (iPhoneの最小キーボード高さに収まる)
+    private let keySize: CGFloat = 44
+    private let funcWidth: CGFloat = 46
+    private let sp: CGFloat = 3
 
     var body: some View {
         VStack(spacing: 0) {
             topBar
 
-            HStack(alignment: .top, spacing: 4) {
-                // 左ファンクション列: ABC, 地球儀, (空き), 空白/確定
-                VStack(spacing: 4) {
+            HStack(alignment: .top, spacing: sp) {
+                // 左ファンクション列: ABC, 地球儀, ☆123/かな, 空白/確定
+                VStack(spacing: sp) {
                     switchKey.frame(width: funcWidth, height: keySize)
                     globeKey.frame(width: funcWidth, height: keySize)
-                    Color.clear.frame(width: funcWidth, height: keySize)
+                    numberToggleKey.frame(width: funcWidth, height: keySize)
                     spaceKey.frame(width: funcWidth, height: keySize)
                 }
 
-                // かなグリッド 3列×4行 (幅いっぱいに展開)
-                VStack(spacing: 4) {
-                    ForEach(kanaGrid.indices, id: \.self) { row in
-                        HStack(spacing: 4) {
-                            ForEach(kanaGrid[row].indices, id: \.self) { col in
-                                let chars = kanaGrid[row][col]
+                // かな / 数字グリッド (幅いっぱいに展開)
+                VStack(spacing: sp) {
+                    ForEach(currentGrid.indices, id: \.self) { row in
+                        HStack(spacing: sp) {
+                            ForEach(currentGrid[row].indices, id: \.self) { col in
+                                let chars = currentGrid[row][col]
                                 FlickKey(chars: chars) { char in
                                     handleSelect(char, fromKey: chars)
                                 }
@@ -180,15 +203,15 @@ struct FlickKeyboardView: View {
                     }
                 }
 
-                // 右ファンクション列: 縦長⌫ (2行分), 縦長改行 (2行分)
-                VStack(spacing: 4) {
-                    backspaceKey.frame(width: funcWidth, height: keySize * 2 + 4)
-                    returnKey.frame(width: funcWidth, height: keySize * 2 + 4)
+                // 右ファンクション列: 縦長⌫, 縦長改行 (各2行分の高さ)
+                VStack(spacing: sp) {
+                    backspaceKey.frame(width: funcWidth, height: keySize * 2 + sp)
+                    returnKey.frame(width: funcWidth, height: keySize * 2 + sp)
                 }
             }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 4)
-            .padding(.bottom, 8)
+            .padding(.horizontal, sp)
+            .padding(.top, sp)
+            .padding(.bottom, 6)
         }
         .background(Color(UIColor.systemGray5))
         .onChange(of: composingText) { newText in
@@ -278,7 +301,7 @@ struct FlickKeyboardView: View {
                 .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
             Image(systemName: "delete.left")
-                .font(.system(size: 18))
+                .font(.system(size: 16))
                 .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
                 .allowsHitTesting(false)
             BackspaceButton(
@@ -319,7 +342,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text(composingText.isEmpty ? "空白" : "確定")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -338,7 +361,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text("改行")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -355,7 +378,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text("ABC")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -372,7 +395,24 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Image(systemName: "globe")
-                        .font(.system(size: 16))
+                        .font(.system(size: 15))
+                        .foregroundColor(Color(UIColor.label))
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var numberToggleKey: some View {
+        Button(action: {
+            if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
+            isNumberMode.toggle()
+        }) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isNumberMode ? Color.accentColor.opacity(0.2) : Color(UIColor.systemGray3))
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                .overlay(
+                    Text(isNumberMode ? "かな" : "☆123")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -387,6 +427,13 @@ struct FlickKeyboardView: View {
     }
 
     private func handleSelect(_ char: String, fromKey chars: FlickChars) {
+        // 数字・記号モードは直接挿入
+        if isNumberMode {
+            if !composingText.isEmpty { onInsert(composingText); composingText = "" }
+            onInsert(char)
+            return
+        }
+
         if chars.center == "゛" {
             if !composingText.isEmpty {
                 if let last = composingText.last, let next = dakutenCycle[last] {
