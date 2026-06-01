@@ -11,10 +11,10 @@ struct FlickChars {
     let down: String?
     let left: String?
 
-    init(_ center: String, up: String? = nil, right: String? = nil,
-         down: String? = nil, left: String? = nil) {
-        self.center = center; self.up = up; self.right = right
-        self.down = down; self.left = left
+    init(_ center: String, left: String? = nil, up: String? = nil,
+         right: String? = nil, down: String? = nil) {
+        self.center = center; self.left = left; self.up = up
+        self.right = right; self.down = down
     }
 
     func char(for dir: FlickDirection) -> String? {
