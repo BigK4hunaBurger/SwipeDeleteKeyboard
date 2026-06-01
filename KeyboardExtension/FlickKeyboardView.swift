@@ -132,9 +132,9 @@ struct FlickKeyboardView: View {
         [FlickChars("ま", left:"み", up:"む", right:"め", down:"も"),
          FlickChars("や", left:"ゃ", up:"ゆ", right:"ー", down:"よ"),
          FlickChars("ら", left:"り", up:"る", right:"れ", down:"ろ")],
-        [FlickChars("、", left:"。", up:"？", right:"！", down:"…"),
+        [FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
          FlickChars("わ", left:"を", up:"ん", right:"ー", down:"〜"),
-         FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ")],
+         FlickChars("、", left:"。", up:"？", right:"！", down:"…")],
     ]
 
     // 数字・記号グリッド
@@ -282,7 +282,6 @@ struct FlickKeyboardView: View {
             .padding(.horizontal, 6)
         }
         .frame(height: 36)
-        .background(Color(UIColor.systemGray6))
     }
 
     private var deletionPreview: some View {
@@ -308,7 +307,6 @@ struct FlickKeyboardView: View {
             Spacer(minLength: 8)
         }
         .frame(height: 36)
-        .background(Color(UIColor.systemGray6))
     }
 
     // MARK: - Function keys

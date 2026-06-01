@@ -131,6 +131,7 @@ struct KeyboardView: View {
 
     // MARK: - Top bar
 
+    // topBarは常に32px固定 → リレイアウトなしでスライドジェスチャーが切れない
     @ViewBuilder
     private var topBar: some View {
         if slideCount > 0 {
@@ -138,7 +139,7 @@ struct KeyboardView: View {
         } else if mode == .romajiJapanese && !pendingRomaji.isEmpty {
             romajiHint
         } else {
-            Color.clear.frame(height: 28)
+            Color.clear.frame(height: 32)
         }
     }
 
@@ -168,8 +169,7 @@ struct KeyboardView: View {
             .cornerRadius(6)
             Spacer(minLength: 8)
         }
-        .frame(height: 28)
-        .padding(.top, 4)
+        .frame(height: 32)
     }
 
     private var romajiHint: some View {
@@ -183,8 +183,7 @@ struct KeyboardView: View {
                 .clipShape(Capsule())
             Spacer()
         }
-        .frame(height: 28)
-        .padding(.top, 4)
+        .frame(height: 32)
     }
 
     // MARK: - Keys
