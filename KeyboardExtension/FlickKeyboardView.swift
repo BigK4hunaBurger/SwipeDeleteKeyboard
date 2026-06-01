@@ -289,8 +289,11 @@ struct FlickKeyboardView: View {
     private var deletionPreview: some View {
         let all = Array(contextBefore)
         let del = min(slideCount, all.count)
-        let keep = String(String(all.prefix(all.count - del)).suffix(20))
-        let deleted = String(String(all.suffix(del)).suffix(20))
+        // カーソルから遡る28文字ウィンドウで左端を省略し、境界を常に表示
+        let window = Array(all.suffix(28))
+        let keepCount = max(0, window.count - del)
+        let keep = String(window.prefix(keepCount))
+        let deleted = String(window.suffix(min(del, window.count)))
 
         return HStack(spacing: 0) {
             Spacer(minLength: 8)

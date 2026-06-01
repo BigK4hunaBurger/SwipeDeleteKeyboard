@@ -93,8 +93,11 @@ struct KeyboardView: View {
     private var deletionPreview: some View {
         let chars = Array(contextBefore)
         let del = min(slideCount, chars.count)
-        let keepText = String(String(chars.prefix(chars.count - del)).suffix(20))
-        let delText = String(String(chars.suffix(del)).suffix(20))
+        // カーソルから遡る28文字ウィンドウで左端を省略し、境界を常に表示
+        let window = Array(chars.suffix(28))
+        let keepCount = max(0, window.count - del)
+        let keepText = String(window.prefix(keepCount))
+        let delText = String(window.suffix(min(del, window.count)))
 
         return HStack(spacing: 0) {
             Spacer(minLength: 8)
