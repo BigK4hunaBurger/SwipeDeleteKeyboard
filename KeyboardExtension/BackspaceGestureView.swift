@@ -73,7 +73,6 @@ struct BackspaceButton: UIViewRepresentable {
 
     func makeUIView(context: Context) -> BackspaceGestureView {
         let v = BackspaceGestureView()
-        v.isExclusiveTouch = true   // 隣のキーのジェスチャーにタッチを奪われない
         v.backgroundColor = .clear
         v.onTap = onTap
         v.onSlideDelete = onSlideDelete
