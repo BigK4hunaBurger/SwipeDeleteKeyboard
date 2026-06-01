@@ -32,6 +32,7 @@ struct KeyboardView: View {
                 onBackspaceSlide: onBackspaceSlide,
                 onReturn: onReturn,
                 onSwitchToEnglish: { mode = .english },
+                onNextKeyboard: onNextKeyboard,
                 getContextBefore: getContextBefore
             )
         } else {

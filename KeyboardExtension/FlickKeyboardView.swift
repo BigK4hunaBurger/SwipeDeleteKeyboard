@@ -50,7 +50,6 @@ struct FlickKey: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.accentColor)
             } else {
-                // 十字型ヒント
                 VStack(spacing: 0) {
                     Text(chars.up ?? " ")
                         .font(.system(size: 8))
@@ -111,6 +110,7 @@ struct FlickKeyboardView: View {
     let onBackspaceSlide: (Int) -> Void
     let onReturn: () -> Void
     let onSwitchToEnglish: () -> Void
+    let onNextKeyboard: () -> Void
     let getContextBefore: () -> String
 
     @State private var slideCount = 0
@@ -156,8 +156,16 @@ struct FlickKeyboardView: View {
         VStack(spacing: 0) {
             topBar
 
-            HStack(alignment: .top, spacing: 6) {
-                // かなグリッド (3列×4行)
+            HStack(alignment: .top, spacing: 4) {
+                // 左ファンクション列: ABC, 地球儀, (空き), 空白/確定
+                VStack(spacing: 4) {
+                    switchKey.frame(width: funcWidth, height: keySize)
+                    globeKey.frame(width: funcWidth, height: keySize)
+                    Color.clear.frame(width: funcWidth, height: keySize)
+                    spaceKey.frame(width: funcWidth, height: keySize)
+                }
+
+                // かなグリッド 3列×4行 (幅いっぱいに展開)
                 VStack(spacing: 4) {
                     ForEach(kanaGrid.indices, id: \.self) { row in
                         HStack(spacing: 4) {
@@ -166,32 +174,24 @@ struct FlickKeyboardView: View {
                                 FlickKey(chars: chars) { char in
                                     handleSelect(char, fromKey: chars)
                                 }
-                                .frame(height: keySize)
+                                .frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
                             }
                         }
                     }
                 }
-                .padding(.leading, 12)
 
-                // ファンクション列 (順番: ⌫, 空白, ABC, 改行)
+                // 右ファンクション列: 縦長⌫ (2行分), 縦長改行 (2行分)
                 VStack(spacing: 4) {
-                    backspaceKey
-                        .frame(width: funcWidth, height: keySize)
-                    spaceKey
-                        .frame(width: funcWidth, height: keySize)
-                    switchKey      // ABC を3番目に
-                        .frame(width: funcWidth, height: keySize)
-                    returnKey      // 改行を4番目に
-                        .frame(width: funcWidth, height: keySize)
+                    backspaceKey.frame(width: funcWidth, height: keySize * 2 + 4)
+                    returnKey.frame(width: funcWidth, height: keySize * 2 + 4)
                 }
-                .padding(.trailing, 12)
             }
+            .padding(.horizontal, 4)
             .padding(.vertical, 4)
-            .padding(.bottom, 8)  // 下部の見切れ防止
+            .padding(.bottom, 8)
         }
         .background(Color(UIColor.systemGray5))
         .onChange(of: composingText) { newText in
-            // 入力と同時に自動変換
             if newText.isEmpty {
                 candidates = []
             } else {
@@ -219,14 +219,12 @@ struct FlickKeyboardView: View {
     private var candidateBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                // 入力中のひらがなを左端に表示
                 if !composingText.isEmpty {
                     Text(composingText)
                         .font(.system(size: 13))
                         .foregroundColor(Color(UIColor.secondaryLabel))
                         .padding(.leading, 4)
                 }
-
                 ForEach(candidates, id: \.self) { candidate in
                     Button(action: {
                         onInsert(candidate)
@@ -280,7 +278,7 @@ struct FlickKeyboardView: View {
                 .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
             Image(systemName: "delete.left")
-                .font(.system(size: 15))
+                .font(.system(size: 18))
                 .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
                 .allowsHitTesting(false)
             BackspaceButton(
@@ -309,7 +307,6 @@ struct FlickKeyboardView: View {
     private var spaceKey: some View {
         Button(action: {
             if !composingText.isEmpty {
-                // スペースで先頭候補を確定
                 let first = candidates.first ?? composingText
                 onInsert(first)
                 composingText = ""; candidates = []
@@ -341,7 +338,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text("改行")
-                        .font(.system(size: 12))
+                        .font(.system(size: 14))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -359,6 +356,23 @@ struct FlickKeyboardView: View {
                 .overlay(
                     Text("ABC")
                         .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(UIColor.label))
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var globeKey: some View {
+        Button(action: {
+            if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
+            onNextKeyboard()
+        }) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(UIColor.systemGray3))
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                .overlay(
+                    Image(systemName: "globe")
+                        .font(.system(size: 16))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
