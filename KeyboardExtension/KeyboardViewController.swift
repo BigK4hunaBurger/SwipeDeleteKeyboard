@@ -7,6 +7,7 @@ class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .clear
 
         let keyboardView = KeyboardView(
             onInsert: { [weak self] text in
@@ -39,6 +40,7 @@ class KeyboardViewController: UIInputViewController {
         )
 
         let hosting = UIHostingController(rootView: keyboardView)
+        hosting.view.backgroundColor = .clear
         hostingController = hosting
 
         addChild(hosting)

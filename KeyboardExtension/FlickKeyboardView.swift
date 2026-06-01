@@ -192,7 +192,6 @@ struct FlickKeyboardView: View {
             .padding(.top, sp)
             .padding(.bottom, 3)
         }
-        .background(Color(UIColor.systemGray5))
         .onChange(of: composingText) { newText in
             if newText.isEmpty {
                 candidates = []
