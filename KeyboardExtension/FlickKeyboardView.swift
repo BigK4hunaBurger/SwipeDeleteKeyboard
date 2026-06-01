@@ -112,6 +112,8 @@ struct FlickKeyboardView: View {
     let onSwitchToEnglish: () -> Void
     let onNextKeyboard: () -> Void
     let getContextBefore: () -> String
+    let onSetMarkedText: (String) -> Void
+    let onUnmarkText: () -> Void
 
     @State private var slideCount = 0
     @State private var contextBefore = ""
@@ -194,8 +196,11 @@ struct FlickKeyboardView: View {
         .onChange(of: composingText) { newText in
             if newText.isEmpty {
                 candidates = []
+                onUnmarkText()
             } else {
                 candidates = KanjiConverter.shared.candidates(for: newText)
+                // 入力欄にひらがなを下線付きで表示（標準IME動作）
+                onSetMarkedText(newText)
             }
         }
         .onChange(of: slideCount) { newCount in

@@ -29,6 +29,12 @@ class KeyboardViewController: UIInputViewController {
             },
             getContextBefore: { [weak self] in
                 self?.textDocumentProxy.documentContextBeforeInput ?? ""
+            },
+            onSetMarkedText: { [weak self] text in
+                self?.textDocumentProxy.setMarkedText(text, selectedRange: NSRange(location: text.utf16.count, length: 0))
+            },
+            onUnmarkText: { [weak self] in
+                self?.textDocumentProxy.unmarkText()
             }
         )
 

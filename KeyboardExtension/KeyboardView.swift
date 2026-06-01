@@ -9,6 +9,8 @@ struct KeyboardView: View {
     let onReturn: () -> Void
     let onNextKeyboard: () -> Void
     let getContextBefore: () -> String
+    let onSetMarkedText: (String) -> Void
+    let onUnmarkText: () -> Void
 
     @State private var mode: InputMode = .english
     @State private var isUppercase = false
@@ -33,7 +35,9 @@ struct KeyboardView: View {
                 onReturn: onReturn,
                 onSwitchToEnglish: { mode = .english },
                 onNextKeyboard: onNextKeyboard,
-                getContextBefore: getContextBefore
+                getContextBefore: getContextBefore,
+                onSetMarkedText: onSetMarkedText,
+                onUnmarkText: onUnmarkText
             )
         } else {
             qwertyKeyboard
@@ -298,7 +302,9 @@ struct KeyboardView: View {
         onBackspaceSlide: { print("slide delete: \($0)") },
         onReturn: { print("return") },
         onNextKeyboard: { print("next keyboard") },
-        getContextBefore: { "これはテスト文章です" }
+        getContextBefore: { "これはテスト文章です" },
+        onSetMarkedText: { print("marked: \($0)") },
+        onUnmarkText: { print("unmark") }
     )
     .frame(height: 280)
 }
