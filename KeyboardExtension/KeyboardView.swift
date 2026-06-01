@@ -71,15 +71,14 @@ struct KeyboardView: View {
     }
 
     private var deletionPreview: some View {
-        let context = contextBefore
-        let totalChars = context.unicodeScalars.count
+        let chars = Array(contextBefore)
+        let totalChars = chars.count
         let deleteCount = min(slideCount, totalChars)
         let keepCount = totalChars - deleteCount
 
-        let keepText = String(context.unicodeScalars.prefix(keepCount)) ?? ""
-        let deleteText = String(context.unicodeScalars.suffix(deleteCount)) ?? ""
+        let keepText = String(chars.prefix(keepCount))
+        let deleteText = String(chars.suffix(deleteCount))
 
-        // Show at most last 40 chars to avoid overflow
         let displayKeep = String(keepText.suffix(40 - min(deleteCount, 20)))
         let displayDelete = String(deleteText.suffix(20))
 
@@ -279,12 +278,6 @@ struct KeyboardView: View {
         let result = converter.flush()
         pendingRomaji = ""
         if !result.isEmpty { onInsert(result) }
-    }
-}
-
-private extension String {
-    init?(_ scalars: Substring.UnicodeScalarView) {
-        self.init(scalars)
     }
 }
 
