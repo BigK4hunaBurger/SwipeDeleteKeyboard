@@ -168,50 +168,27 @@ struct FlickKeyboardView: View {
         return m
     }()
 
-    // keySize=44, spacing=3 → 4行合計 = 4*44+3*3 = 185px
-    // 縦長キー = 44*2+3 = 91px × 2 + 3gap = 185px (一致)
-    // topBar44 + padding9 + grid185 = 238px (iPhoneの最小キーボード高さに収まる)
+    // 高さ計算: topBar(36) + padTop(3) + grid(4*44+3*3=185) + padBot(3) = 227px
+    // 右列: ⌫(44) + sp(3) + 空白(44) + sp(3) + 改行(44*2+3=91) = 185 ✓
+    // 全カラム maxWidth:.infinity で5等分 (左機能+かな3+右機能)
     private let keySize: CGFloat = 44
-    private let funcWidth: CGFloat = 46
     private let sp: CGFloat = 3
 
     var body: some View {
         VStack(spacing: 0) {
             topBar
 
+            // 5列を maxWidth:.infinity で均等幅に
             HStack(alignment: .top, spacing: sp) {
-                // 左ファンクション列: ABC, 地球儀, ☆123/かな, 空白/確定
-                VStack(spacing: sp) {
-                    switchKey.frame(width: funcWidth, height: keySize)
-                    globeKey.frame(width: funcWidth, height: keySize)
-                    numberToggleKey.frame(width: funcWidth, height: keySize)
-                    spaceKey.frame(width: funcWidth, height: keySize)
-                }
-
-                // かな / 数字グリッド (幅いっぱいに展開)
-                VStack(spacing: sp) {
-                    ForEach(currentGrid.indices, id: \.self) { row in
-                        HStack(spacing: sp) {
-                            ForEach(currentGrid[row].indices, id: \.self) { col in
-                                let chars = currentGrid[row][col]
-                                FlickKey(chars: chars) { char in
-                                    handleSelect(char, fromKey: chars)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
-                            }
-                        }
-                    }
-                }
-
-                // 右ファンクション列: 縦長⌫, 縦長改行 (各2行分の高さ)
-                VStack(spacing: sp) {
-                    backspaceKey.frame(width: funcWidth, height: keySize * 2 + sp)
-                    returnKey.frame(width: funcWidth, height: keySize * 2 + sp)
-                }
+                leftColumn
+                kanaColumn(0)
+                kanaColumn(1)
+                kanaColumn(2)
+                rightColumn
             }
             .padding(.horizontal, sp)
             .padding(.top, sp)
-            .padding(.bottom, 6)
+            .padding(.bottom, 3)
         }
         .background(Color(UIColor.systemGray5))
         .onChange(of: composingText) { newText in
@@ -226,8 +203,42 @@ struct FlickKeyboardView: View {
         }
     }
 
-    // MARK: - Top bar
+    // MARK: - Columns
 
+    private var leftColumn: some View {
+        VStack(spacing: sp) {
+            switchKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            globeKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            numberToggleKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            Color.clear.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var rightColumn: some View {
+        VStack(spacing: sp) {
+            backspaceKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            spaceKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            returnKey.frame(maxWidth: .infinity, minHeight: keySize * 2 + sp, maxHeight: keySize * 2 + sp)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func kanaColumn(_ col: Int) -> some View {
+        VStack(spacing: sp) {
+            ForEach(0..<currentGrid.count, id: \.self) { row in
+                let chars = currentGrid[row][col]
+                FlickKey(chars: chars) { char in
+                    handleSelect(char, fromKey: chars)
+                }
+                .frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Top bar
+    // topBar高さを36pxに抑えることで総高さ227px → 候補欄が上で切れない
     @ViewBuilder
     private var topBar: some View {
         if !candidates.isEmpty {
@@ -235,7 +246,7 @@ struct FlickKeyboardView: View {
         } else if slideCount > 0 {
             deletionPreview
         } else {
-            Color.clear.frame(height: 44)
+            Color.clear.frame(height: 36)
         }
     }
 
@@ -255,18 +266,18 @@ struct FlickKeyboardView: View {
                         candidates = []
                     }) {
                         Text(candidate)
-                            .font(.system(size: 16))
+                            .font(.system(size: 15))
                             .foregroundColor(Color(UIColor.label))
-                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .padding(.horizontal, 10).padding(.vertical, 4)
                             .background(Color(UIColor.systemBackground))
                             .cornerRadius(6)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
         }
-        .frame(height: 44)
+        .frame(height: 36)
         .background(Color(UIColor.systemGray6))
     }
 
@@ -283,13 +294,13 @@ struct FlickKeyboardView: View {
                 Text(deleted).foregroundColor(.white).background(Color.red)
                 Text("｜").foregroundColor(Color(UIColor.label))
             }
-            .font(.system(size: 14)).lineLimit(1)
-            .padding(.horizontal, 10).padding(.vertical, 4)
+            .font(.system(size: 13)).lineLimit(1)
+            .padding(.horizontal, 10).padding(.vertical, 3)
             .background(Color(UIColor.systemBackground))
             .cornerRadius(6)
             Spacer(minLength: 8)
         }
-        .frame(height: 44)
+        .frame(height: 36)
         .background(Color(UIColor.systemGray6))
     }
 
@@ -301,7 +312,7 @@ struct FlickKeyboardView: View {
                 .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
             Image(systemName: "delete.left")
-                .font(.system(size: 16))
+                .font(.system(size: 15))
                 .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
                 .allowsHitTesting(false)
             BackspaceButton(
@@ -395,7 +406,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Image(systemName: "globe")
-                        .font(.system(size: 15))
+                        .font(.system(size: 14))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -427,7 +438,6 @@ struct FlickKeyboardView: View {
     }
 
     private func handleSelect(_ char: String, fromKey chars: FlickChars) {
-        // 数字・記号モードは直接挿入
         if isNumberMode {
             if !composingText.isEmpty { onInsert(composingText); composingText = "" }
             onInsert(char)
