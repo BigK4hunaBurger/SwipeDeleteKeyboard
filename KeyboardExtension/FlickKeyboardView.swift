@@ -50,28 +50,9 @@ struct FlickKey: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.accentColor)
             } else {
-                VStack(spacing: 0) {
-                    Text(chars.up ?? " ")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(UIColor.tertiaryLabel))
-                    HStack(spacing: 0) {
-                        Text(chars.left ?? " ")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 12)
-                        Text(chars.center)
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(UIColor.label))
-                            .frame(minWidth: 14)
-                        Text(chars.right ?? " ")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 12)
-                    }
-                    Text(chars.down ?? " ")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(UIColor.tertiaryLabel))
-                }
+                Text(chars.center)
+                    .font(.system(size: 18))
+                    .foregroundColor(Color(UIColor.label))
             }
         }
         .gesture(
@@ -132,7 +113,7 @@ struct FlickKeyboardView: View {
         [FlickChars("ま", left:"み", up:"む", right:"め", down:"も"),
          FlickChars("や", left:"ゃ", up:"ゆ", right:"ー", down:"よ"),
          FlickChars("ら", left:"り", up:"る", right:"れ", down:"ろ")],
-        [FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
+        [FlickChars("゛", up:"小"),
          FlickChars("わ", left:"を", up:"ん", right:"ー", down:"〜"),
          FlickChars("、", left:"。", up:"？", right:"！", down:"…")],
     ]
@@ -154,6 +135,14 @@ struct FlickKeyboardView: View {
     ]
 
     private var currentGrid: [[FlickChars]] { isNumberMode ? numberGrid : kanaGrid }
+
+    // 上フリック専用: 小文字変換のみ
+    private let smallOnlyCycle: [Character: Character] = [
+        "あ":"ぁ","ぁ":"あ","い":"ぃ","ぃ":"い","う":"ぅ","ぅ":"う",
+        "え":"ぇ","ぇ":"え","お":"ぉ","ぉ":"お",
+        "つ":"っ","っ":"つ","づ":"っ",
+        "や":"ゃ","ゃ":"や","ゆ":"ゅ","ゅ":"ゆ","よ":"ょ","ょ":"よ","わ":"ゎ","ゎ":"わ",
+    ]
 
     // 濁点→半濁点→小文字→元 の順でサイクル（標準iOSキーボード準拠）
     private let modifierCycle: [Character: Character] = {
@@ -454,8 +443,14 @@ struct FlickKeyboardView: View {
 
         let isCenter = (char == chars.center)
 
-        if isCenter && chars.center == "゛" {
-            applyModifier(modifierCycle)
+        if chars.center == "゛" {
+            if char == "小" {
+                // 上フリック: 小文字変換のみ
+                applyModifier(smallOnlyCycle)
+            } else {
+                // センタータップ or 他方向フリック: 通常サイクル
+                applyModifier(modifierCycle)
+            }
         } else if isHiragana(char) {
             composingText += char
         } else {
