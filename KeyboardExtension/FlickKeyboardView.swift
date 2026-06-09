@@ -132,7 +132,7 @@ struct FlickKeyboardView: View {
         [FlickChars("ま", left:"み", up:"む", right:"め", down:"も"),
          FlickChars("や", left:"ゃ", up:"ゆ", right:"ー", down:"よ"),
          FlickChars("ら", left:"り", up:"る", right:"れ", down:"ろ")],
-        [FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
+        [FlickChars("小", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
          FlickChars("わ", left:"を", up:"ん", right:"ー", down:"〜"),
          FlickChars("、", left:"。", up:"？", right:"！", down:"…")],
     ]
@@ -169,6 +169,13 @@ struct FlickKeyboardView: View {
         }
         return m
     }()
+
+    private let smallCycle: [Character: Character] = [
+        "あ":"ぁ","ぁ":"あ","い":"ぃ","ぃ":"い","う":"ぅ","ぅ":"う",
+        "え":"ぇ","ぇ":"え","お":"ぉ","ぉ":"お",
+        "つ":"っ","っ":"つ","や":"ゃ","ゃ":"や",
+        "ゆ":"ゅ","ゅ":"ゆ","よ":"ょ","ょ":"よ","わ":"ゎ","ゎ":"わ",
+    ]
 
     // 高さ計算: topBar(36) + padTop(3) + grid(4*44+3*3=185) + padBot(3) = 227px
     // 右列: ⌫(44) + sp(3) + 空白(44) + sp(3) + 改行(44*2+3=91) = 185 ✓
@@ -448,22 +455,31 @@ struct FlickKeyboardView: View {
             return
         }
 
-        if chars.center == "゛" {
-            if !composingText.isEmpty {
-                if let last = composingText.last, let next = dakutenCycle[last] {
-                    composingText = String(composingText.dropLast()) + String(next)
-                } else { composingText += char }
-            } else {
-                let context = getContextBefore()
-                if let last = context.last, let next = dakutenCycle[last] {
-                    onBackspace(); onInsert(String(next))
-                } else { composingText += char }
-            }
+        let isCenter = (char == chars.center)
+
+        if isCenter && chars.center == "小" {
+            // 小文字変換、できなければ濁点にフォールバック
+            if !applyModifier(smallCycle) { applyModifier(dakutenCycle) }
+        } else if isCenter && chars.center == "゛" {
+            applyModifier(dakutenCycle)
         } else if isHiragana(char) {
             composingText += char
         } else {
             if !composingText.isEmpty { onInsert(composingText); composingText = "" }
             onInsert(char)
+        }
+    }
+
+    @discardableResult
+    private func applyModifier(_ cycle: [Character: Character]) -> Bool {
+        if !composingText.isEmpty {
+            guard let last = composingText.last, let next = cycle[last] else { return false }
+            composingText = String(composingText.dropLast()) + String(next)
+            return true
+        } else {
+            guard let last = getContextBefore().last, let next = cycle[last] else { return false }
+            onBackspace(); onInsert(String(next))
+            return true
         }
     }
 }
