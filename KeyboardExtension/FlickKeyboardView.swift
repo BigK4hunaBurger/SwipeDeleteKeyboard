@@ -203,7 +203,13 @@ struct FlickKeyboardView: View {
             }
         }
         .onChange(of: slideCount) { newCount in
-            if newCount > 0 { contextBefore = getContextBefore() }
+            if newCount > 0 {
+                let before = getContextBefore()
+                // marked textがdocumentContextBeforeInputに含まれない場合があるため補完
+                contextBefore = (!composingText.isEmpty && !before.hasSuffix(composingText))
+                    ? before + composingText
+                    : before
+            }
         }
     }
 
@@ -245,10 +251,10 @@ struct FlickKeyboardView: View {
     // topBar高さを36pxに抑えることで総高さ227px → 候補欄が上で切れない
     @ViewBuilder
     private var topBar: some View {
-        if !candidates.isEmpty {
-            candidateBar
-        } else if slideCount > 0 {
+        if slideCount > 0 {
             deletionPreview
+        } else if !candidates.isEmpty {
+            candidateBar
         } else {
             Color.clear.frame(height: 36)
         }

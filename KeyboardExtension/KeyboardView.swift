@@ -17,8 +17,11 @@ struct KeyboardView: View {
     @State private var slideCount = 0
     @State private var contextBefore = ""
     @State private var pendingRomaji = ""
+    @State private var currentEnglishWord = ""
+    @State private var englishSuggestions: [String] = []
 
     private let converter = JapaneseConverter()
+    private let textChecker = UITextChecker()
 
     private let rows: [[String]] = [
         ["q","w","e","r","t","y","u","i","o","p"],
@@ -136,11 +139,38 @@ struct KeyboardView: View {
     private var topBar: some View {
         if slideCount > 0 {
             deletionPreview
+        } else if mode == .english && !englishSuggestions.isEmpty {
+            englishSuggestionBar
         } else if mode == .romajiJapanese && !pendingRomaji.isEmpty {
             romajiHint
         } else {
             Color.clear.frame(height: 32)
         }
+    }
+
+    private var englishSuggestionBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(englishSuggestions, id: \.self) { word in
+                    Button(action: {
+                        onBackspaceSlide(currentEnglishWord.count)
+                        onInsert(word + " ")
+                        currentEnglishWord = ""
+                        englishSuggestions = []
+                    }) {
+                        Text(word)
+                            .font(.system(size: 15))
+                            .foregroundColor(Color(UIColor.label))
+                            .padding(.horizontal, 10).padding(.vertical, 4)
+                            .background(Color(UIColor.systemBackground))
+                            .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 6)
+        }
+        .frame(height: 32)
     }
 
     private var deletionPreview: some View {
@@ -254,7 +284,7 @@ struct KeyboardView: View {
     }
 
     private var returnKey: some View {
-        Button(action: { flushJapanese(); onReturn() }) {
+        Button(action: { clearEnglishTracking(); flushJapanese(); onReturn() }) {
             Text("return")
                 .font(.system(size: 17))
                 .foregroundColor(Color(UIColor.label))
@@ -267,7 +297,7 @@ struct KeyboardView: View {
     }
 
     private var nextKeyboardButton: some View {
-        Button(action: { flushJapanese(); onNextKeyboard() }) {
+        Button(action: { clearEnglishTracking(); flushJapanese(); onNextKeyboard() }) {
             Image(systemName: "globe")
                 .font(.system(size: 20))
                 .foregroundColor(Color(UIColor.label))
@@ -283,7 +313,7 @@ struct KeyboardView: View {
     @ViewBuilder
     private var numbersModeButton: some View {
         if mode == .english || mode == .romajiJapanese {
-            Button(action: { flushJapanese(); mode = .englishNumbers }) {
+            Button(action: { clearEnglishTracking(); flushJapanese(); mode = .englishNumbers }) {
                 Text("123")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color(UIColor.label))
@@ -294,7 +324,7 @@ struct KeyboardView: View {
             }
             .buttonStyle(.plain)
         } else if mode == .englishNumbers || mode == .englishMoreSymbols {
-            Button(action: { mode = .english }) {
+            Button(action: { clearEnglishTracking(); mode = .english }) {
                 Text("ABC")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color(UIColor.label))
@@ -318,6 +348,7 @@ struct KeyboardView: View {
         case .flickJapanese:  label = "EN"
         }
         return Button(action: {
+            clearEnglishTracking()
             flushJapanese()
             switch mode {
             case .english, .englishNumbers, .englishMoreSymbols: mode = .romajiJapanese
@@ -347,6 +378,15 @@ struct KeyboardView: View {
         switch mode {
         case .english, .englishNumbers, .englishMoreSymbols:
             onInsert(char)
+            if mode == .english {
+                if char.first?.isLetter == true {
+                    currentEnglishWord += char
+                } else {
+                    currentEnglishWord = ""
+                    englishSuggestions = []
+                }
+                updateEnglishSuggestions()
+            }
         case .romajiJapanese:
             let committed = converter.input(char)
             pendingRomaji = converter.pending
@@ -357,6 +397,10 @@ struct KeyboardView: View {
     }
 
     private func handleBackspace() {
+        if mode == .english && !currentEnglishWord.isEmpty {
+            currentEnglishWord = String(currentEnglishWord.dropLast())
+            updateEnglishSuggestions()
+        }
         if mode == .romajiJapanese && converter.deleteFromBuffer() {
             pendingRomaji = converter.pending
             return
@@ -365,6 +409,7 @@ struct KeyboardView: View {
     }
 
     private func handleSpace() {
+        clearEnglishTracking()
         flushJapanese()
         onInsert(mode == .romajiJapanese ? "　" : " ")
     }
@@ -374,6 +419,19 @@ struct KeyboardView: View {
         let result = converter.flush()
         pendingRomaji = ""
         if !result.isEmpty { onInsert(result) }
+    }
+
+    private func clearEnglishTracking() {
+        currentEnglishWord = ""
+        englishSuggestions = []
+    }
+
+    private func updateEnglishSuggestions() {
+        guard currentEnglishWord.count >= 2 else { englishSuggestions = []; return }
+        let range = NSRange(location: 0, length: currentEnglishWord.utf16.count)
+        englishSuggestions = (textChecker.completions(
+            forPartialWordRange: range, in: currentEnglishWord, language: "en_US"
+        ) ?? []).prefix(8).map { $0 }
     }
 }
 
