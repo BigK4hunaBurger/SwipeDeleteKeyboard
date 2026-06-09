@@ -47,29 +47,29 @@ struct FlickKey: View {
 
             if isFlicking {
                 Text(chars.char(for: dir) ?? chars.center)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.accentColor)
             } else {
                 VStack(spacing: 0) {
                     Text(chars.up ?? " ")
-                        .font(.system(size: 8))
+                        .font(.system(size: 10))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                     HStack(spacing: 0) {
                         Text(chars.left ?? " ")
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 10)
+                            .frame(width: 12)
                         Text(chars.center)
-                            .font(.system(size: 16))
+                            .font(.system(size: 18))
                             .foregroundColor(Color(UIColor.label))
                             .frame(minWidth: 14)
                         Text(chars.right ?? " ")
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
-                            .frame(width: 10)
+                            .frame(width: 12)
                     }
                     Text(chars.down ?? " ")
-                        .font(.system(size: 8))
+                        .font(.system(size: 10))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                 }
             }
@@ -259,7 +259,7 @@ struct FlickKeyboardView: View {
             HStack(spacing: 6) {
                 if !composingText.isEmpty {
                     Text(composingText)
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                         .foregroundColor(Color(UIColor.secondaryLabel))
                         .padding(.leading, 4)
                 }
@@ -270,7 +270,7 @@ struct FlickKeyboardView: View {
                         candidates = []
                     }) {
                         Text(candidate)
-                            .font(.system(size: 15))
+                            .font(.system(size: 17))
                             .foregroundColor(Color(UIColor.label))
                             .padding(.horizontal, 10).padding(.vertical, 4)
                             .background(Color(UIColor.systemBackground))
@@ -300,7 +300,7 @@ struct FlickKeyboardView: View {
                 Text(deleted).foregroundColor(.white).background(Color.red)
                 Text("｜").foregroundColor(Color(UIColor.label))
             }
-            .font(.system(size: 13)).lineLimit(1)
+            .font(.system(size: 15)).lineLimit(1)
             .padding(.horizontal, 10).padding(.vertical, 3)
             .background(Color(UIColor.systemBackground))
             .cornerRadius(6)
@@ -315,7 +315,7 @@ struct FlickKeyboardView: View {
         BackspaceKey(
             slideCount: $slideCount,
             cornerRadius: 6,
-            iconSize: 15,
+            iconSize: 17,
             onTap: {
                 if !composingText.isEmpty {
                     composingText = String(composingText.dropLast())
@@ -338,7 +338,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text("空白")
-                        .font(.system(size: 11))
+                        .font(.system(size: 13))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -361,7 +361,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text(composingText.isEmpty ? "改行" : "確定")
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -378,7 +378,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text("ABC")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -395,7 +395,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Image(systemName: "globe")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundColor(Color(UIColor.label))
                 )
         }
@@ -412,7 +412,7 @@ struct FlickKeyboardView: View {
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
                 .overlay(
                     Text(isNumberMode ? "かな" : "☆123")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(Color(UIColor.label))
                 )
         }

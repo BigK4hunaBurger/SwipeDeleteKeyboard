@@ -97,7 +97,7 @@ struct KeyboardView: View {
             HStack(spacing: 5) {
                 Button(action: { mode = isNumbersMode ? .englishMoreSymbols : .englishNumbers }) {
                     Text(isNumbersMode ? "#+=" : "123")
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                         .foregroundColor(Color(UIColor.label))
                         .frame(width: 42, height: 42)
                         .background(Color(UIColor.systemGray3))
@@ -162,7 +162,7 @@ struct KeyboardView: View {
                 }
                 Text("｜").foregroundColor(Color(UIColor.label))
             }
-            .font(.system(size: 14))
+            .font(.system(size: 16))
             .lineLimit(1)
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(Color(UIColor.systemBackground))
@@ -192,7 +192,7 @@ struct KeyboardView: View {
         let label = isUppercase ? key.uppercased() : key
         return Button(action: { handleLetter(key) }) {
             Text(label)
-                .font(.system(size: 17))
+                .font(.system(size: 19))
                 .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
                 .background(Color(UIColor.systemBackground))
@@ -205,7 +205,7 @@ struct KeyboardView: View {
     private func symbolKey(_ key: String) -> some View {
         Button(action: { onInsert(key) }) {
             Text(key)
-                .font(.system(size: 17))
+                .font(.system(size: 19))
                 .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
                 .background(Color(UIColor.systemBackground))
@@ -218,7 +218,7 @@ struct KeyboardView: View {
     private var shiftKey: some View {
         Button(action: { isUppercase.toggle() }) {
             Image(systemName: isUppercase ? "shift.fill" : "shift")
-                .font(.system(size: 16))
+                .font(.system(size: 18))
                 .foregroundColor(isUppercase ? .white : Color(UIColor.label))
                 .frame(width: 42, height: 42)
                 .background(isUppercase ? Color.accentColor : Color(UIColor.systemGray3))
@@ -243,7 +243,7 @@ struct KeyboardView: View {
     private var spaceKey: some View {
         Button(action: { handleSpace() }) {
             Text(mode == .romajiJapanese ? "スペース" : "space")
-                .font(.system(size: 15))
+                .font(.system(size: 17))
                 .foregroundColor(Color(UIColor.label))
                 .frame(maxWidth: .infinity, minHeight: 42)
                 .background(Color(UIColor.systemBackground))
@@ -256,7 +256,7 @@ struct KeyboardView: View {
     private var returnKey: some View {
         Button(action: { flushJapanese(); onReturn() }) {
             Text("return")
-                .font(.system(size: 15))
+                .font(.system(size: 17))
                 .foregroundColor(Color(UIColor.label))
                 .frame(width: 88, height: 42)
                 .background(Color(UIColor.systemGray3))
@@ -269,7 +269,7 @@ struct KeyboardView: View {
     private var nextKeyboardButton: some View {
         Button(action: { flushJapanese(); onNextKeyboard() }) {
             Image(systemName: "globe")
-                .font(.system(size: 18))
+                .font(.system(size: 20))
                 .foregroundColor(Color(UIColor.label))
                 .frame(width: 42, height: 42)
                 .background(Color(UIColor.systemGray3))
@@ -285,7 +285,7 @@ struct KeyboardView: View {
         if mode == .english || mode == .romajiJapanese {
             Button(action: { flushJapanese(); mode = .englishNumbers }) {
                 Text("123")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color(UIColor.label))
                     .frame(width: 42, height: 42)
                     .background(Color(UIColor.systemGray3))
@@ -296,7 +296,7 @@ struct KeyboardView: View {
         } else if mode == .englishNumbers || mode == .englishMoreSymbols {
             Button(action: { mode = .english }) {
                 Text("ABC")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color(UIColor.label))
                     .frame(width: 42, height: 42)
                     .background(Color(UIColor.systemGray3))
@@ -326,7 +326,7 @@ struct KeyboardView: View {
             }
         }) {
             Text(label)
-                .font(.system(size: label.count > 2 ? 11 : 14, weight: .semibold))
+                .font(.system(size: label.count > 2 ? 13 : 16, weight: .semibold))
                 .foregroundColor(Color(UIColor.label))
                 .frame(width: 42, height: 42)
                 .background(

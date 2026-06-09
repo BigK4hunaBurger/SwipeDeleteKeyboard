@@ -3,7 +3,7 @@ import SwiftUI
 struct BackspaceKey: View {
     @Binding var slideCount: Int
     var cornerRadius: CGFloat = 5
-    var iconSize: CGFloat = 16
+    var iconSize: CGFloat = 18
     let onTap: () -> Void
     let onSlideDelete: (Int) -> Void
 
