@@ -329,10 +329,19 @@ struct FlickKeyboardView: View {
             },
             onSlideDelete: { count in
                 if !composingText.isEmpty {
-                    onInsert(composingText)
-                    composingText = ""; candidates = []
+                    if count <= composingText.count {
+                        // 入力中の文字列内で収まる → 確定せず composingText から削る
+                        composingText = String(composingText.dropLast(count))
+                    } else {
+                        // 入力中を超える → unmark してドキュメントから count 文字削除
+                        // (unmark 後の deleteBackward が composing 分も含めて count 文字削る)
+                        onUnmarkText()
+                        composingText = ""; candidates = []
+                        onBackspaceSlide(count)
+                    }
+                } else {
+                    onBackspaceSlide(count)
                 }
-                onBackspaceSlide(count)
             }
         )
     }
