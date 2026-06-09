@@ -132,7 +132,7 @@ struct FlickKeyboardView: View {
         [FlickChars("ま", left:"み", up:"む", right:"め", down:"も"),
          FlickChars("や", left:"ゃ", up:"ゆ", right:"ー", down:"よ"),
          FlickChars("ら", left:"り", up:"る", right:"れ", down:"ろ")],
-        [FlickChars("小", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
+        [FlickChars("゛", left:"ゅ", up:"ゃ", right:"ょ", down:"っ"),
          FlickChars("わ", left:"を", up:"ん", right:"ー", down:"〜"),
          FlickChars("、", left:"。", up:"？", right:"！", down:"…")],
     ]
@@ -155,27 +155,24 @@ struct FlickKeyboardView: View {
 
     private var currentGrid: [[FlickChars]] { isNumberMode ? numberGrid : kanaGrid }
 
-    private let dakutenCycle: [Character: Character] = {
+    // 濁点→半濁点→小文字→元 の順でサイクル（標準iOSキーボード準拠）
+    private let modifierCycle: [Character: Character] = {
         var m: [Character: Character] = [:]
-        let pairs: [[Character]] = [
+        let cycles: [[Character]] = [
             ["か","が"],["き","ぎ"],["く","ぐ"],["け","げ"],["こ","ご"],
             ["さ","ざ"],["し","じ"],["す","ず"],["せ","ぜ"],["そ","ぞ"],
-            ["た","だ"],["ち","ぢ"],["つ","づ"],["て","で"],["と","ど"],
+            ["た","だ"],["ち","ぢ"],["て","で"],["と","ど"],
+            ["つ","づ","っ"],           // 濁点→小文字→元
             ["は","ば","ぱ"],["ひ","び","ぴ"],["ふ","ぶ","ぷ"],
             ["へ","べ","ぺ"],["ほ","ぼ","ぽ"],
+            ["あ","ぁ"],["い","ぃ"],["う","ぅ"],["え","ぇ"],["お","ぉ"],
+            ["や","ゃ"],["ゆ","ゅ"],["よ","ょ"],["わ","ゎ"],
         ]
-        for cycle in pairs {
+        for cycle in cycles {
             for (i, ch) in cycle.enumerated() { m[ch] = cycle[(i + 1) % cycle.count] }
         }
         return m
     }()
-
-    private let smallCycle: [Character: Character] = [
-        "あ":"ぁ","ぁ":"あ","い":"ぃ","ぃ":"い","う":"ぅ","ぅ":"う",
-        "え":"ぇ","ぇ":"え","お":"ぉ","ぉ":"お",
-        "つ":"っ","っ":"つ","や":"ゃ","ゃ":"や",
-        "ゆ":"ゅ","ゅ":"ゆ","よ":"ょ","ょ":"よ","わ":"ゎ","ゎ":"わ",
-    ]
 
     // 高さ計算: topBar(36) + padTop(3) + grid(4*44+3*3=185) + padBot(3) = 227px
     // 右列: ⌫(44) + sp(3) + 空白(44) + sp(3) + 改行(44*2+3=91) = 185 ✓
@@ -457,11 +454,8 @@ struct FlickKeyboardView: View {
 
         let isCenter = (char == chars.center)
 
-        if isCenter && chars.center == "小" {
-            // 小文字変換、できなければ濁点にフォールバック
-            if !applyModifier(smallCycle) { applyModifier(dakutenCycle) }
-        } else if isCenter && chars.center == "゛" {
-            applyModifier(dakutenCycle)
+        if isCenter && chars.center == "゛" {
+            applyModifier(modifierCycle)
         } else if isHiragana(char) {
             composingText += char
         } else {
