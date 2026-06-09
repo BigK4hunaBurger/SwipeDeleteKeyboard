@@ -312,35 +312,23 @@ struct FlickKeyboardView: View {
     // MARK: - Function keys
 
     private var backspaceKey: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
-                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
-            Image(systemName: "delete.left")
-                .font(.system(size: 15))
-                .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
-                .allowsHitTesting(false)
-            BackspaceButton(
-                onTap: {
-                    if !composingText.isEmpty {
-                        composingText = String(composingText.dropLast())
-                    } else { onBackspace() }
-                },
-                onSlideDelete: { count in
-                    // 入力中なら確定してからスライド削除
-                    if !composingText.isEmpty {
-                        onInsert(composingText)
-                        composingText = ""; candidates = []
-                    }
-                    withAnimation(.easeOut(duration: 0.1)) { slideCount = 0 }
-                    onBackspaceSlide(count)
-                },
-                onCountChange: { count in
-                    // 入力中でもカウント表示（スライド削除できるように）
-                    withAnimation(.easeInOut(duration: 0.1)) { slideCount = count }
+        BackspaceKey(
+            slideCount: $slideCount,
+            cornerRadius: 6,
+            iconSize: 15,
+            onTap: {
+                if !composingText.isEmpty {
+                    composingText = String(composingText.dropLast())
+                } else { onBackspace() }
+            },
+            onSlideDelete: { count in
+                if !composingText.isEmpty {
+                    onInsert(composingText)
+                    composingText = ""; candidates = []
                 }
-            )
-        }
+                onBackspaceSlide(count)
+            }
+        )
     }
 
     private var spaceKey: some View {

@@ -229,27 +229,14 @@ struct KeyboardView: View {
     }
 
     private var backspaceKey: some View {
-        ZStack {
-            // RoundedRectangleでSwiftUIのヒットエリアを確定させる（ないとタッチが届かない）
-            RoundedRectangle(cornerRadius: 5)
-                .fill(slideCount > 0 ? Color.red.opacity(0.15) : Color(UIColor.systemGray3))
-                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
-            Image(systemName: "delete.left")
-                .font(.system(size: 16))
-                .foregroundColor(slideCount > 0 ? .red : Color(UIColor.label))
-                .allowsHitTesting(false)
-            BackspaceButton(
-                onTap: handleBackspace,
-                onSlideDelete: { count in
-                    withAnimation(.easeOut(duration: 0.1)) { slideCount = 0 }
-                    onBackspaceSlide(count)
-                    if mode == .romajiJapanese { converter.flush(); pendingRomaji = "" }
-                },
-                onCountChange: { count in
-                    withAnimation(.easeInOut(duration: 0.1)) { slideCount = count }
-                }
-            )
-        }
+        BackspaceKey(
+            slideCount: $slideCount,
+            onTap: handleBackspace,
+            onSlideDelete: { count in
+                onBackspaceSlide(count)
+                if mode == .romajiJapanese { converter.flush(); pendingRomaji = "" }
+            }
+        )
         .frame(width: 42, height: 42)
     }
 
