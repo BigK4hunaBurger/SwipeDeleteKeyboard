@@ -5,6 +5,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -85,20 +88,73 @@ jobs:
           echo "Export done:"
           ls -la $RUNNER_TEMP/export/
 
-      - name: Upload IPA to Diawi
+      - name: Get build number
+        id: buildnum
         run: |
+          BUILD=$(grep 'CURRENT_PROJECT_VERSION' project.yml | head -1 | tr -d ' "' | cut -d: -f2)
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+          echo "Build number: $BUILD"
+
+      - name: Create manifest.plist
+        run: |
+          BUILD=${{ steps.buildnum.outputs.build }}
+          IPA_URL="https://github.com/${{ github.repository }}/releases/download/build-${BUILD}/SwipeDeleteKeyboard.ipa"
+          cat > $RUNNER_TEMP/export/manifest.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>items</key>
+            <array>
+              <dict>
+                <key>assets</key>
+                <array>
+                  <dict>
+                    <key>kind</key><string>software-package</string>
+                    <key>url</key><string>${IPA_URL}</string>
+                  </dict>
+                </array>
+                <key>metadata</key>
+                <dict>
+                  <key>bundle-identifier</key><string>com.bigk4huna.swipedelete</string>
+                  <key>bundle-version</key><string>1.0</string>
+                  <key>kind</key><string>software</string>
+                  <key>title</key><string>SwipeDeleteKeyboard</string>
+                </dict>
+              </dict>
+            </array>
+          </dict>
+          </plist>
+          EOF
+          echo "manifest.plist created"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD=${{ steps.buildnum.outputs.build }}
+          TAG="build-${BUILD}"
           IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
-          echo "IPA: $IPA_PATH"
-          RESPONSE=$(curl -s -F "file=@$IPA_PATH" \
-            -F "token=${{ secrets.DIAWI_TOKEN }}" \
-            https://upload.diawi.com/)
-          echo "Response: $RESPONSE"
-          JOB=$(echo $RESPONSE | python3 -c "import sys,json; print(json.load(sys.stdin)['job'])")
-          echo "Job: $JOB"
-          sleep 15
-          STATUS=$(curl -s "https://upload.diawi.com/status?token=${{ secrets.DIAWI_TOKEN }}&job=$JOB")
-          echo "Status: $STATUS"
-          LINK=$(echo $STATUS | python3 -c "import sys,json; print(json.load(sys.stdin).get('link',''))")
+          MANIFEST_PATH=$RUNNER_TEMP/export/manifest.plist
+          MANIFEST_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/manifest.plist"
+          OTA_LINK="itms-services://?action=download-manifest&url=${MANIFEST_URL}"
+
+          # 既存タグがあれば削除して再作成
+          gh release delete "$TAG" --repo ${{ github.repository }} --yes 2>/dev/null || true
+          git tag -d "$TAG" 2>/dev/null || true
+          git push origin --delete "$TAG" 2>/dev/null || true
+
+          gh release create "$TAG" \
+            --repo ${{ github.repository }} \
+            --title "Build ${BUILD}" \
+            --notes "OTA install: \`${OTA_LINK}\`" \
+            "$IPA_PATH" \
+            "$MANIFEST_PATH"
+
           echo "============================================"
-          echo "Install link: $LINK"
+          echo "OTA Install link:"
+          echo "$OTA_LINK"
+          echo "============================================"
+          echo "Or open on iPhone:"
+          echo "https://github.com/${{ github.repository }}/releases/tag/${TAG}"
           echo "============================================"
