@@ -407,7 +407,6 @@ final class KeyboardViewController: UIInputViewController {
 
     private var keys: [KeyView] = []
     private var heightConstraint: NSLayoutConstraint?
-    private let boardBackground = UIView()   // キー領域のみの背景(候補バー領域は透過)
 
     // かな漢字変換
     private var composingText = ""
@@ -444,7 +443,6 @@ final class KeyboardViewController: UIInputViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isJapaneseEnvironment { mode = .abc }
-        view.addSubview(boardBackground)
         setupCandidateBar()
         buildKeyboard()
     }
@@ -577,9 +575,6 @@ final class KeyboardViewController: UIInputViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         candidateBar.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: topBarHeight)
-        boardBackground.frame = CGRect(x: 0, y: topBarHeight,
-                                       width: view.bounds.width,
-                                       height: view.bounds.height - topBarHeight)
         layoutKeys()
     }
 
@@ -616,9 +611,7 @@ final class KeyboardViewController: UIInputViewController {
 
     private func applyTheme() {
         let p = palette
-        // 候補バー領域はシステムのブラー背景を透過させる(丸角の余白が見えないように)
-        view.backgroundColor = .clear
-        boardBackground.backgroundColor = p.background
+        view.backgroundColor = p.background
         keys.forEach { $0.apply(p) }
         reloadCandidateBar()
     }
@@ -848,12 +841,13 @@ final class KeyboardViewController: UIInputViewController {
     private func showGuide(for key: KeyView, map: FlickMap) {
         hideGuide()
         let g = FlickGuideView(map: map, palette: palette)
-        g.center = CGPoint(x: key.center.x,
-                           y: max(g.bounds.height / 2 - 8, key.center.y - 10))
-        // 画面端でのはみ出しを補正
-        let pad: CGFloat = 4
-        if g.frame.minX < pad { g.frame.origin.x = pad }
-        if g.frame.maxX > view.bounds.width - pad { g.frame.origin.x = view.bounds.width - pad - g.bounds.width }
+        // キーボード拡張はビュー領域の外に描画できない(描画してもシステムに切られる)ので
+        // ガイド全体が必ず領域内に収まるよう上下左右ともクランプする
+        let pad: CGFloat = 2
+        var c = CGPoint(x: key.center.x, y: key.center.y - 10)
+        c.x = min(max(g.bounds.width / 2 + pad, c.x), view.bounds.width - g.bounds.width / 2 - pad)
+        c.y = min(max(g.bounds.height / 2 + pad, c.y), view.bounds.height - g.bounds.height / 2 - pad)
+        g.center = c
         view.addSubview(g)
         g.highlight(.center, palette: palette)
         guideView = g
