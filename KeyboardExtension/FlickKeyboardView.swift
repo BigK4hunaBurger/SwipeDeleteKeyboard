@@ -101,22 +101,99 @@ private struct CalloutShape: Shape {
     }
 }
 
+// MARK: - Callout preference (lifts callout to top of keyboard view)
+
+private struct FlickCalloutData {
+    let chars: FlickChars
+    let dir: FlickDirection
+    let isFlicking: Bool
+    let anchor: Anchor<CGRect>
+}
+
+private struct FlickCalloutKey: PreferenceKey {
+    static var defaultValue: FlickCalloutData? = nil
+    static func reduce(value: inout FlickCalloutData?, nextValue: () -> FlickCalloutData?) {
+        value = nextValue() ?? value
+    }
+}
+
+// Renders the callout at keyboard-level coordinate space (on top of everything)
+private struct FlickCalloutView: View {
+    let data: FlickCalloutData
+    let keyRect: CGRect
+
+    // If callout would overflow keyboard top, flip it downward automatically
+    private var effectiveDir: FlickDirection {
+        if (data.dir == .center || data.dir == .up) && keyRect.minY < 62 { return .down }
+        return data.dir
+    }
+
+    private var size: CGSize {
+        switch effectiveDir {
+        case .center, .up, .down: return CGSize(width: 52, height: 61)
+        case .left, .right:       return CGSize(width: 61, height: 50)
+        }
+    }
+
+    private var side: CalloutShape.Side {
+        switch effectiveDir {
+        case .center, .up: return .bottom
+        case .down:        return .top
+        case .left:        return .right
+        case .right:       return .left
+        }
+    }
+
+    private var textOffset: CGSize {
+        let t: CGFloat = 3.5
+        switch effectiveDir {
+        case .center, .up: return CGSize(width: 0, height: -t)
+        case .down:        return CGSize(width: 0, height:  t)
+        case .left:        return CGSize(width: -t, height: 0)
+        case .right:       return CGSize(width:  t, height: 0)
+        }
+    }
+
+    private var center: CGPoint {
+        let s = size
+        switch effectiveDir {
+        case .center, .up:
+            return CGPoint(x: keyRect.midX, y: keyRect.minY - s.height / 2)
+        case .down:
+            return CGPoint(x: keyRect.midX, y: keyRect.maxY + s.height / 2)
+        case .left:
+            return CGPoint(x: keyRect.minX - s.width / 2, y: keyRect.midY)
+        case .right:
+            return CGPoint(x: keyRect.maxX + s.width / 2, y: keyRect.midY)
+        }
+    }
+
+    var body: some View {
+        let s = size
+        ZStack {
+            CalloutShape(side: side)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
+            Text(data.chars.char(for: data.dir) ?? data.chars.center)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(data.isFlicking ? .accentColor : Color(UIColor.label))
+                .offset(x: textOffset.width, y: textOffset.height)
+        }
+        .frame(width: s.width, height: s.height)
+        .position(center)
+    }
+}
+
 // MARK: - FlickKey
 
 struct FlickKey: View {
     let chars: FlickChars
-    var preferBelow: Bool = false
     let onSelect: (String) -> Void
 
     @State private var dir: FlickDirection = .center
     @State private var isActive = false
     @State private var isFlicking = false
     private let threshold: CGFloat = 22
-
-    // When preferBelow=true (top row), flip up/center callout downward to avoid clipping
-    private var calloutDir: FlickDirection {
-        preferBelow && (dir == .center || dir == .up) ? .down : dir
-    }
 
     var body: some View {
         ZStack {
@@ -159,73 +236,9 @@ struct FlickKey: View {
                     isActive = false; isFlicking = false; dir = .center
                 }
         )
-        .overlay {
-            if isActive {
-                GeometryReader { geo in
-                    callout.position(calloutCenter(for: geo.size))
-                }
-                .allowsHitTesting(false)
-            }
+        .anchorPreference(key: FlickCalloutKey.self, value: .bounds) { anchor in
+            isActive ? FlickCalloutData(chars: chars, dir: dir, isFlicking: isFlicking, anchor: anchor) : nil
         }
-        .zIndex(isActive ? 10 : 0)
-    }
-
-    // Callout frame size varies by callout position direction
-    private var calloutSize: CGSize {
-        switch calloutDir {
-        case .center, .up, .down: return CGSize(width: 52, height: 61)
-        case .left, .right:       return CGSize(width: 61, height: 50)
-        }
-    }
-
-    private var calloutSide: CalloutShape.Side {
-        switch calloutDir {
-        case .center, .up: return .bottom
-        case .down:        return .top
-        case .left:        return .right
-        case .right:       return .left
-        }
-    }
-
-    // Shift text toward bubble center (away from triangle)
-    private var calloutTextOffset: CGSize {
-        let t: CGFloat = 3.5
-        switch calloutDir {
-        case .center, .up: return CGSize(width: 0, height: -t)
-        case .down:        return CGSize(width: 0, height:  t)
-        case .left:        return CGSize(width: -t, height: 0)
-        case .right:       return CGSize(width:  t, height: 0)
-        }
-    }
-
-    // Position callout so triangle tip touches the relevant key edge
-    private func calloutCenter(for keySize: CGSize) -> CGPoint {
-        let s = calloutSize
-        switch calloutDir {
-        case .center, .up:
-            return CGPoint(x: keySize.width / 2,           y: -s.height / 2)
-        case .down:
-            return CGPoint(x: keySize.width / 2,           y: keySize.height + s.height / 2)
-        case .left:
-            return CGPoint(x: -s.width / 2,                y: keySize.height / 2)
-        case .right:
-            return CGPoint(x: keySize.width + s.width / 2, y: keySize.height / 2)
-        }
-    }
-
-    @ViewBuilder
-    private var callout: some View {
-        let s = calloutSize
-        ZStack {
-            CalloutShape(side: calloutSide)
-                .fill(Color(UIColor.systemBackground))
-                .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
-            Text(chars.char(for: dir) ?? chars.center)
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundColor(isFlicking ? .accentColor : Color(UIColor.label))
-                .offset(x: calloutTextOffset.width, y: calloutTextOffset.height)
-        }
-        .frame(width: s.width, height: s.height)
     }
 }
 
@@ -350,6 +363,14 @@ struct FlickKeyboardView: View {
                     : before
             }
         }
+        .overlayPreferenceValue(FlickCalloutKey.self) { data in
+            if let data = data {
+                GeometryReader { proxy in
+                    FlickCalloutView(data: data, keyRect: proxy[data.anchor])
+                }
+                .allowsHitTesting(false)
+            }
+        }
     }
 
     // MARK: - Columns
@@ -377,7 +398,7 @@ struct FlickKeyboardView: View {
         VStack(spacing: sp) {
             ForEach(0..<currentGrid.count, id: \.self) { row in
                 let chars = currentGrid[row][col]
-                FlickKey(chars: chars, preferBelow: row == 0) { char in
+                FlickKey(chars: chars) { char in
                     handleSelect(char, fromKey: chars)
                 }
                 .frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
