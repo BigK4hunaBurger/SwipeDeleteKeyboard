@@ -25,6 +25,9 @@ class KeyboardViewController: UIInputViewController {
             onReturn: { [weak self] in
                 self?.textDocumentProxy.insertText("\n")
             },
+            onMoveCursor: { [weak self] offset in
+                self?.textDocumentProxy.adjustTextPosition(byCharacterOffset: offset)
+            },
             onNextKeyboard: { [weak self] in
                 self?.advanceToNextInputMode()
             },

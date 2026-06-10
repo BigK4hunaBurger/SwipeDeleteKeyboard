@@ -74,13 +74,13 @@ extension ThemeConfig {
         keyActiveBg: Color(UIColor.systemGray4),
         keyFg: Color(UIColor.label),
         keyFlickFg: .accentColor,
-        keyRadius: 6,
+        keyRadius: 9,
         funcBg: Color(UIColor.systemGray3),
         funcFg: Color(UIColor.label),
         calloutBg: Color(UIColor.systemBackground),
         calloutFg: Color(UIColor.label),
         calloutFlickFg: .accentColor,
-        calloutRadius: 8,
+        calloutRadius: 11,
         calloutShadowColor: .black.opacity(0.35),
         calloutShadowRadius: 4,
         calloutFont: .system(size: 28, weight: .semibold)
@@ -108,13 +108,13 @@ extension ThemeConfig {
         keyActiveBg: Color(red: 0.22, green: 0.0, blue: 0.38),
         keyFg: Color(red: 0.72, green: 0.72, blue: 1.0),
         keyFlickFg: Color(red: 0.0, green: 1.0, blue: 1.0),
-        keyRadius: 4,
+        keyRadius: 8,
         funcBg: Color(red: 0.04, green: 0.04, blue: 0.10),
         funcFg: Color(red: 0.65, green: 0.65, blue: 0.95),
         calloutBg: Color(red: 0.06, green: 0.06, blue: 0.18),
         calloutFg: Color(red: 0.0, green: 1.0, blue: 1.0),
         calloutFlickFg: Color(red: 1.0, green: 0.0, blue: 1.0),
-        calloutRadius: 5,
+        calloutRadius: 9,
         calloutShadowColor: Color.cyan.opacity(0.7),
         calloutShadowRadius: 10,
         calloutFont: .system(size: 28, weight: .bold)
@@ -125,13 +125,13 @@ extension ThemeConfig {
         keyActiveBg: Color(red: 0.98, green: 0.85, blue: 0.90),
         keyFg: Color(red: 0.35, green: 0.20, blue: 0.25),
         keyFlickFg: Color(red: 0.85, green: 0.20, blue: 0.40),
-        keyRadius: 10,
+        keyRadius: 13,
         funcBg: Color(red: 0.95, green: 0.88, blue: 0.91),
         funcFg: Color(red: 0.35, green: 0.20, blue: 0.25),
         calloutBg: Color(red: 1.0, green: 0.97, blue: 0.98),
         calloutFg: Color(red: 0.35, green: 0.20, blue: 0.25),
         calloutFlickFg: Color(red: 0.85, green: 0.20, blue: 0.40),
-        calloutRadius: 12,
+        calloutRadius: 15,
         calloutShadowColor: Color(red: 0.85, green: 0.40, blue: 0.55).opacity(0.3),
         calloutShadowRadius: 5,
         calloutFont: .system(size: 28, weight: .semibold)
@@ -142,13 +142,13 @@ extension ThemeConfig {
         keyActiveBg: Color(red: 0.16, green: 0.22, blue: 0.38),
         keyFg: Color(red: 0.75, green: 0.84, blue: 0.98),
         keyFlickFg: Color(red: 0.55, green: 0.88, blue: 1.0),
-        keyRadius: 6,
+        keyRadius: 9,
         funcBg: Color(red: 0.05, green: 0.08, blue: 0.14),
         funcFg: Color(red: 0.60, green: 0.72, blue: 0.90),
         calloutBg: Color(red: 0.09, green: 0.13, blue: 0.24),
         calloutFg: Color(red: 0.75, green: 0.84, blue: 0.98),
         calloutFlickFg: Color(red: 0.55, green: 0.88, blue: 1.0),
-        calloutRadius: 8,
+        calloutRadius: 11,
         calloutShadowColor: Color(red: 0.3, green: 0.5, blue: 0.9).opacity(0.4),
         calloutShadowRadius: 6,
         calloutFont: .system(size: 28, weight: .semibold)
@@ -176,13 +176,13 @@ extension ThemeConfig {
         keyActiveBg: Color(red: 0.38, green: 0.20, blue: 0.18),
         keyFg: Color(red: 1.0, green: 0.84, blue: 0.70),
         keyFlickFg: Color(red: 1.0, green: 0.55, blue: 0.20),
-        keyRadius: 5,
+        keyRadius: 9,
         funcBg: Color(red: 0.12, green: 0.06, blue: 0.07),
         funcFg: Color(red: 0.90, green: 0.70, blue: 0.55),
         calloutBg: Color(red: 0.24, green: 0.13, blue: 0.14),
         calloutFg: Color(red: 1.0, green: 0.84, blue: 0.70),
         calloutFlickFg: Color(red: 1.0, green: 0.55, blue: 0.20),
-        calloutRadius: 5,
+        calloutRadius: 9,
         calloutShadowColor: Color(red: 1.0, green: 0.45, blue: 0.10).opacity(0.45),
         calloutShadowRadius: 7,
         calloutFont: .system(size: 28, weight: .semibold)
@@ -306,64 +306,29 @@ private struct FlickCalloutView: View {
     let bounds: CGSize
     @Environment(\.kbTheme) var theme
 
-    private var size: CGSize {
-        switch data.dir {
-        case .center, .up, .down: return CGSize(width: 52, height: 61)
-        case .left, .right:       return CGSize(width: 61, height: 50)
-        }
-    }
+    private let size = CGSize(width: 52, height: 61)
 
-    private var side: CalloutShape.Side {
-        switch data.dir {
-        case .center, .up: return .bottom
-        case .down:        return .top
-        case .left:        return .right
-        case .right:       return .left
-        }
-    }
-
-    private var textOffset: CGSize {
-        let t: CGFloat = 3.5
-        switch data.dir {
-        case .center, .up: return CGSize(width: 0, height: -t)
-        case .down:        return CGSize(width: 0, height:  t)
-        case .left:        return CGSize(width: -t, height: 0)
-        case .right:       return CGSize(width:  t, height: 0)
-        }
-    }
-
+    // 全方向ともキーの真上に統一表示（表示文字だけフリック方向に追従）
     private var center: CGPoint {
-        let s = size
-        var c: CGPoint
-        switch data.dir {
-        case .center, .up:
-            c = CGPoint(x: keyRect.midX, y: keyRect.minY - s.height / 2)
-        case .down:
-            c = CGPoint(x: keyRect.midX, y: keyRect.maxY + s.height / 2)
-        case .left:
-            c = CGPoint(x: keyRect.minX - s.width / 2, y: keyRect.midY)
-        case .right:
-            c = CGPoint(x: keyRect.maxX + s.width / 2, y: keyRect.midY)
-        }
+        var c = CGPoint(x: keyRect.midX, y: keyRect.minY - size.height / 2)
         // キーボード拡張はビュー領域外に描画できないため、はみ出す分を内側に寄せる
-        c.x = min(max(s.width / 2 + 1, c.x), bounds.width - s.width / 2 - 1)
-        c.y = min(max(s.height / 2 + 1, c.y), bounds.height - s.height / 2 - 1)
+        c.x = min(max(size.width / 2 + 1, c.x), bounds.width - size.width / 2 - 1)
+        c.y = min(max(size.height / 2 + 1, c.y), bounds.height - size.height / 2 - 1)
         return c
     }
 
     var body: some View {
-        let s = size
         ZStack {
-            CalloutShape(side: side, cr: theme.calloutRadius)
+            CalloutShape(side: .bottom, cr: theme.calloutRadius)
                 .fill(theme.calloutBg)
                 .shadow(color: theme.calloutShadowColor,
                         radius: theme.calloutShadowRadius, x: 0, y: 2)
             Text(data.chars.char(for: data.dir) ?? data.chars.center)
                 .font(theme.calloutFont)
                 .foregroundColor(data.isFlicking ? theme.calloutFlickFg : theme.calloutFg)
-                .offset(x: textOffset.width, y: textOffset.height)
+                .offset(y: -3.5)
         }
-        .frame(width: s.width, height: s.height)
+        .frame(width: size.width, height: size.height)
         .position(center)
     }
 }
@@ -434,17 +399,23 @@ struct FlickKeyboardView: View {
     let onBackspace: () -> Void
     let onBackspaceSlide: (Int) -> Void
     let onReturn: () -> Void
+    let onMoveCursor: (Int) -> Void
     let onSwitchToEnglish: () -> Void
     let onNextKeyboard: () -> Void
     let getContextBefore: () -> String
     let onSetMarkedText: (String) -> Void
     let onUnmarkText: () -> Void
 
+    private enum UndoAction { case inserted(Int), deleted(String) }
+
     @State private var slideCount = 0
     @State private var contextBefore = ""
     @State private var composingText = ""
     @State private var candidates: [String] = []
     @State private var isNumberMode = false
+    @State private var undoStack: [UndoAction] = []
+    @State private var spaceDragging = false
+    @State private var spaceDragSteps = 0
     @State private var currentTheme: KeyboardTheme = {
         let ud = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
         return KeyboardTheme(rawValue: ud.string(forKey: "kbTheme") ?? "") ?? .system
@@ -510,7 +481,7 @@ struct FlickKeyboardView: View {
     }()
 
     private let keySize: CGFloat = 44
-    private let sp: CGFloat = 3
+    private let sp: CGFloat = 5
 
     var body: some View {
         VStack(spacing: 0) {
@@ -561,7 +532,7 @@ struct FlickKeyboardView: View {
             switchKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
             globeKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
             numberToggleKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
-            themeToggleKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
+            undoKey.frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
         }
         .frame(maxWidth: .infinity)
     }
@@ -612,7 +583,7 @@ struct FlickKeyboardView: View {
                 }
                 ForEach(candidates, id: \.self) { candidate in
                     Button(action: {
-                        onInsert(candidate)
+                        doInsert(candidate)
                         composingText = ""
                         candidates = []
                     }) {
@@ -665,18 +636,26 @@ struct FlickKeyboardView: View {
             onTap: {
                 if !composingText.isEmpty {
                     composingText = String(composingText.dropLast())
-                } else { onBackspace() }
+                } else {
+                    if let last = getContextBefore().last {
+                        pushUndo(.deleted(String(last)))
+                    }
+                    onBackspace()
+                }
             },
             onSlideDelete: { count in
                 if !composingText.isEmpty {
                     if count <= composingText.count {
                         composingText = String(composingText.dropLast(count))
                     } else {
+                        // unmarkでcomposingが文書に確定されるので全count文字を文書から削除する
                         onUnmarkText()
                         composingText = ""; candidates = []
+                        pushUndo(.deleted(String(contextBefore.suffix(count))))
                         onBackspaceSlide(count)
                     }
                 } else {
+                    pushUndo(.deleted(String(contextBefore.suffix(count))))
                     onBackspaceSlide(count)
                 }
             }
@@ -684,20 +663,48 @@ struct FlickKeyboardView: View {
     }
 
     private var spaceKey: some View {
-        Button(action: { onInsert("　") }) {
+        ZStack {
             RoundedRectangle(cornerRadius: theme.keyRadius)
-                .fill(theme.keyBg)
+                .fill(spaceDragging ? theme.keyActiveBg : theme.keyBg)
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
-                .overlay(Text("空白").font(.system(size: 13)).foregroundColor(theme.keyFg))
+            Text(spaceDragging ? "◂ ▸" : "空白")
+                .font(.system(size: 13))
+                .foregroundColor(spaceDragging ? theme.keyFlickFg : theme.keyFg)
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                .onChanged { v in
+                    // 12pxごとにカーソル1文字移動。変換中はカーソル移動と相性が悪いので先に確定
+                    if !spaceDragging && abs(v.translation.width) > 12 {
+                        spaceDragging = true
+                        spaceDragSteps = 0
+                        commitComposing()
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                    guard spaceDragging else { return }
+                    let steps = Int(v.translation.width / 12)
+                    if steps != spaceDragSteps {
+                        onMoveCursor(steps - spaceDragSteps)
+                        spaceDragSteps = steps
+                    }
+                }
+                .onEnded { _ in
+                    if !spaceDragging { doInsert("　") }
+                    spaceDragging = false
+                    spaceDragSteps = 0
+                }
+        )
     }
 
     private var returnKey: some View {
         Button(action: {
             if !composingText.isEmpty {
-                onInsert(composingText); composingText = ""; candidates = []
-            } else { onReturn() }
+                commitComposing()
+            } else {
+                pushUndo(.inserted(1))
+                onReturn()
+            }
         }) {
             RoundedRectangle(cornerRadius: theme.keyRadius)
                 .fill(theme.funcBg)
@@ -749,22 +756,27 @@ struct FlickKeyboardView: View {
         .buttonStyle(.plain)
     }
 
-    private var themeToggleKey: some View {
-        Button(action: {
-            currentTheme = currentTheme.next
-            let ud = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
-            ud.set(currentTheme.rawValue, forKey: "kbTheme")
-        }) {
+    // タップで取り消し、長押しでテーマ切替
+    private var undoKey: some View {
+        ZStack {
             RoundedRectangle(cornerRadius: theme.keyRadius)
                 .fill(theme.funcBg)
                 .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
-                .overlay(
-                    Text(currentTheme.icon)
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(theme.keyFg)
+            Image(systemName: "arrow.uturn.backward")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(
+                    (undoStack.isEmpty && composingText.isEmpty)
+                        ? theme.funcFg.opacity(0.35) : theme.funcFg
                 )
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture { performUndo() }
+        .onLongPressGesture(minimumDuration: 0.5) {
+            currentTheme = currentTheme.next
+            let ud = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
+            ud.set(currentTheme.rawValue, forKey: "kbTheme")
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
     }
 
     // MARK: - Input handling
@@ -778,7 +790,7 @@ struct FlickKeyboardView: View {
 
     private func commitComposing() {
         guard !composingText.isEmpty else { return }
-        onInsert(composingText)
+        doInsert(composingText)
         composingText = ""
         candidates = []
     }
@@ -786,7 +798,7 @@ struct FlickKeyboardView: View {
     private func handleSelect(_ char: String, fromKey chars: FlickChars) {
         if isNumberMode {
             commitComposing()
-            onInsert(char)
+            doInsert(char)
             return
         }
         if chars.center == "゛" {
@@ -796,7 +808,36 @@ struct FlickKeyboardView: View {
             composingText += char
         } else {
             commitComposing()
-            onInsert(char)
+            doInsert(char)
+        }
+    }
+
+    // MARK: - Undo
+
+    private func pushUndo(_ action: UndoAction) {
+        undoStack.append(action)
+        if undoStack.count > 30 { undoStack.removeFirst() }
+    }
+
+    private func doInsert(_ text: String) {
+        guard !text.isEmpty else { return }
+        onInsert(text)
+        pushUndo(.inserted(text.count))
+    }
+
+    private func performUndo() {
+        // 変換中なら未確定文字を全消去（それ自体が「入力の取り消し」）
+        if !composingText.isEmpty {
+            composingText = ""
+            candidates = []
+            return
+        }
+        guard let action = undoStack.popLast() else { return }
+        switch action {
+        case .inserted(let n):
+            onBackspaceSlide(n)
+        case .deleted(let text):
+            onInsert(text)
         }
     }
 

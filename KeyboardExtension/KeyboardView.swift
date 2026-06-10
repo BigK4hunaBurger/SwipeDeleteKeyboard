@@ -7,6 +7,7 @@ struct KeyboardView: View {
     let onBackspace: () -> Void
     let onBackspaceSlide: (Int) -> Void
     let onReturn: () -> Void
+    let onMoveCursor: (Int) -> Void
     let onNextKeyboard: () -> Void
     let getContextBefore: () -> String
     let onSetMarkedText: (String) -> Void
@@ -50,6 +51,7 @@ struct KeyboardView: View {
                 onBackspace: onBackspace,
                 onBackspaceSlide: onBackspaceSlide,
                 onReturn: onReturn,
+                onMoveCursor: onMoveCursor,
                 onSwitchToEnglish: { mode = .english },
                 onNextKeyboard: onNextKeyboard,
                 getContextBefore: getContextBefore,
@@ -443,6 +445,7 @@ struct KeyboardView: View {
         onBackspace: { print("backspace") },
         onBackspaceSlide: { print("slide delete: \($0)") },
         onReturn: { print("return") },
+        onMoveCursor: { print("move cursor: \($0)") },
         onNextKeyboard: { print("next keyboard") },
         getContextBefore: { "これはテスト文章です" },
         onSetMarkedText: { print("marked: \($0)") },
