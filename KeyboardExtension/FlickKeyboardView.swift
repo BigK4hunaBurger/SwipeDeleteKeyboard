@@ -31,7 +31,7 @@ struct FlickChars {
 // MARK: - Themes
 
 enum KeyboardTheme: String, CaseIterable {
-    case system, terminal, neon
+    case system, terminal, neon, sakura, midnight, paper, sunset
 
     var next: KeyboardTheme {
         let all = Self.allCases
@@ -43,6 +43,10 @@ enum KeyboardTheme: String, CaseIterable {
         case .system:   return "Aa"
         case .terminal: return ">_"
         case .neon:     return "◈"
+        case .sakura:   return "❀"
+        case .midnight: return "☾"
+        case .paper:    return "▢"
+        case .sunset:   return "◐"
         }
     }
 }
@@ -116,11 +120,83 @@ extension ThemeConfig {
         calloutFont: .system(size: 28, weight: .bold)
     )
 
+    static let sakura = ThemeConfig(
+        keyBg: Color(red: 1.0, green: 0.97, blue: 0.98),
+        keyActiveBg: Color(red: 0.98, green: 0.85, blue: 0.90),
+        keyFg: Color(red: 0.35, green: 0.20, blue: 0.25),
+        keyFlickFg: Color(red: 0.85, green: 0.20, blue: 0.40),
+        keyRadius: 10,
+        funcBg: Color(red: 0.95, green: 0.88, blue: 0.91),
+        funcFg: Color(red: 0.35, green: 0.20, blue: 0.25),
+        calloutBg: Color(red: 1.0, green: 0.97, blue: 0.98),
+        calloutFg: Color(red: 0.35, green: 0.20, blue: 0.25),
+        calloutFlickFg: Color(red: 0.85, green: 0.20, blue: 0.40),
+        calloutRadius: 12,
+        calloutShadowColor: Color(red: 0.85, green: 0.40, blue: 0.55).opacity(0.3),
+        calloutShadowRadius: 5,
+        calloutFont: .system(size: 28, weight: .semibold)
+    )
+
+    static let midnight = ThemeConfig(
+        keyBg: Color(red: 0.09, green: 0.13, blue: 0.22),
+        keyActiveBg: Color(red: 0.16, green: 0.22, blue: 0.38),
+        keyFg: Color(red: 0.75, green: 0.84, blue: 0.98),
+        keyFlickFg: Color(red: 0.55, green: 0.88, blue: 1.0),
+        keyRadius: 6,
+        funcBg: Color(red: 0.05, green: 0.08, blue: 0.14),
+        funcFg: Color(red: 0.60, green: 0.72, blue: 0.90),
+        calloutBg: Color(red: 0.09, green: 0.13, blue: 0.24),
+        calloutFg: Color(red: 0.75, green: 0.84, blue: 0.98),
+        calloutFlickFg: Color(red: 0.55, green: 0.88, blue: 1.0),
+        calloutRadius: 8,
+        calloutShadowColor: Color(red: 0.3, green: 0.5, blue: 0.9).opacity(0.4),
+        calloutShadowRadius: 6,
+        calloutFont: .system(size: 28, weight: .semibold)
+    )
+
+    static let paper = ThemeConfig(
+        keyBg: Color(red: 0.99, green: 0.98, blue: 0.96),
+        keyActiveBg: Color(red: 0.90, green: 0.87, blue: 0.82),
+        keyFg: Color(red: 0.12, green: 0.12, blue: 0.11),
+        keyFlickFg: Color(red: 0.30, green: 0.20, blue: 0.10),
+        keyRadius: 2,
+        funcBg: Color(red: 0.88, green: 0.86, blue: 0.83),
+        funcFg: Color(red: 0.12, green: 0.12, blue: 0.11),
+        calloutBg: Color(red: 0.99, green: 0.98, blue: 0.96),
+        calloutFg: Color(red: 0.12, green: 0.12, blue: 0.11),
+        calloutFlickFg: Color(red: 0.30, green: 0.20, blue: 0.10),
+        calloutRadius: 2,
+        calloutShadowColor: .black.opacity(0.20),
+        calloutShadowRadius: 3,
+        calloutFont: .system(size: 28, weight: .semibold)
+    )
+
+    static let sunset = ThemeConfig(
+        keyBg: Color(red: 0.22, green: 0.12, blue: 0.13),
+        keyActiveBg: Color(red: 0.38, green: 0.20, blue: 0.18),
+        keyFg: Color(red: 1.0, green: 0.84, blue: 0.70),
+        keyFlickFg: Color(red: 1.0, green: 0.55, blue: 0.20),
+        keyRadius: 5,
+        funcBg: Color(red: 0.12, green: 0.06, blue: 0.07),
+        funcFg: Color(red: 0.90, green: 0.70, blue: 0.55),
+        calloutBg: Color(red: 0.24, green: 0.13, blue: 0.14),
+        calloutFg: Color(red: 1.0, green: 0.84, blue: 0.70),
+        calloutFlickFg: Color(red: 1.0, green: 0.55, blue: 0.20),
+        calloutRadius: 5,
+        calloutShadowColor: Color(red: 1.0, green: 0.45, blue: 0.10).opacity(0.45),
+        calloutShadowRadius: 7,
+        calloutFont: .system(size: 28, weight: .semibold)
+    )
+
     static func config(for theme: KeyboardTheme) -> ThemeConfig {
         switch theme {
         case .system:   return .system
         case .terminal: return .terminal
         case .neon:     return .neon
+        case .sakura:   return .sakura
+        case .midnight: return .midnight
+        case .paper:    return .paper
+        case .sunset:   return .sunset
         }
     }
 }
