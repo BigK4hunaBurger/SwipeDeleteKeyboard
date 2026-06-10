@@ -31,30 +31,71 @@ struct FlickChars {
 // MARK: - Callout shape (rounded rect + downward triangle)
 
 private struct CalloutShape: Shape {
-    var triWidth: CGFloat = 14
-    var triHeight: CGFloat = 7
-    var cornerRadius: CGFloat = 8
+    enum Side { case top, bottom, left, right }
+    var side: Side
+    var triLen: CGFloat = 7
+    var triBase: CGFloat = 14
+    var cr: CGFloat = 8
 
     func path(in rect: CGRect) -> Path {
-        let bH = rect.height - triHeight
-        let r = cornerRadius
         var p = Path()
-        p.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
-        p.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r),
-                 radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
-        p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + bH - r))
-        p.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + bH - r),
-                 radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
-        p.addLine(to: CGPoint(x: rect.midX + triWidth / 2, y: rect.minY + bH))
-        p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        p.addLine(to: CGPoint(x: rect.midX - triWidth / 2, y: rect.minY + bH))
-        p.addLine(to: CGPoint(x: rect.minX + r, y: rect.minY + bH))
-        p.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + bH - r),
-                 radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
-        p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
-        p.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r),
-                 radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        switch side {
+        case .bottom:
+            let bH = rect.height - triLen
+            p.move(to: .init(x: rect.minX + cr, y: rect.minY))
+            p.addLine(to: .init(x: rect.maxX - cr, y: rect.minY))
+            p.addArc(center: .init(x: rect.maxX - cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: .init(x: rect.maxX, y: bH - cr))
+            p.addArc(center: .init(x: rect.maxX - cr, y: bH - cr), radius: cr, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            p.addLine(to: .init(x: rect.midX + triBase/2, y: bH))
+            p.addLine(to: .init(x: rect.midX, y: rect.maxY))
+            p.addLine(to: .init(x: rect.midX - triBase/2, y: bH))
+            p.addLine(to: .init(x: rect.minX + cr, y: bH))
+            p.addArc(center: .init(x: rect.minX + cr, y: bH - cr), radius: cr, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            p.addLine(to: .init(x: rect.minX, y: rect.minY + cr))
+            p.addArc(center: .init(x: rect.minX + cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        case .top:
+            let bY = triLen
+            p.move(to: .init(x: rect.midX - triBase/2, y: bY))
+            p.addLine(to: .init(x: rect.midX, y: rect.minY))
+            p.addLine(to: .init(x: rect.midX + triBase/2, y: bY))
+            p.addLine(to: .init(x: rect.maxX - cr, y: bY))
+            p.addArc(center: .init(x: rect.maxX - cr, y: bY + cr), radius: cr, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: .init(x: rect.maxX, y: rect.maxY - cr))
+            p.addArc(center: .init(x: rect.maxX - cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            p.addLine(to: .init(x: rect.minX + cr, y: rect.maxY))
+            p.addArc(center: .init(x: rect.minX + cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            p.addLine(to: .init(x: rect.minX, y: bY + cr))
+            p.addArc(center: .init(x: rect.minX + cr, y: bY + cr), radius: cr, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        case .right:
+            let bW = rect.width - triLen
+            p.move(to: .init(x: rect.minX + cr, y: rect.minY))
+            p.addLine(to: .init(x: bW - cr, y: rect.minY))
+            p.addArc(center: .init(x: bW - cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: .init(x: bW, y: rect.midY - triBase/2))
+            p.addLine(to: .init(x: rect.maxX, y: rect.midY))
+            p.addLine(to: .init(x: bW, y: rect.midY + triBase/2))
+            p.addLine(to: .init(x: bW, y: rect.maxY - cr))
+            p.addArc(center: .init(x: bW - cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            p.addLine(to: .init(x: rect.minX + cr, y: rect.maxY))
+            p.addArc(center: .init(x: rect.minX + cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            p.addLine(to: .init(x: rect.minX, y: rect.minY + cr))
+            p.addArc(center: .init(x: rect.minX + cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        case .left:
+            let bX = triLen
+            p.move(to: .init(x: bX + cr, y: rect.minY))
+            p.addLine(to: .init(x: rect.maxX - cr, y: rect.minY))
+            p.addArc(center: .init(x: rect.maxX - cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: .init(x: rect.maxX, y: rect.maxY - cr))
+            p.addArc(center: .init(x: rect.maxX - cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            p.addLine(to: .init(x: bX + cr, y: rect.maxY))
+            p.addArc(center: .init(x: bX + cr, y: rect.maxY - cr), radius: cr, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            p.addLine(to: .init(x: bX, y: rect.midY + triBase/2))
+            p.addLine(to: .init(x: rect.minX, y: rect.midY))
+            p.addLine(to: .init(x: bX, y: rect.midY - triBase/2))
+            p.addLine(to: .init(x: bX, y: rect.minY + cr))
+            p.addArc(center: .init(x: bX + cr, y: rect.minY + cr), radius: cr, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        }
         p.closeSubpath()
         return p
     }
@@ -70,8 +111,6 @@ struct FlickKey: View {
     @State private var isActive = false
     @State private var isFlicking = false
     private let threshold: CGFloat = 22
-    private let calloutW: CGFloat = 52
-    private let calloutH: CGFloat = 61 // 54 bubble + 7 triangle
 
     var body: some View {
         ZStack {
@@ -114,27 +153,73 @@ struct FlickKey: View {
                     isActive = false; isFlicking = false; dir = .center
                 }
         )
-        .overlay(alignment: .top) {
+        .overlay {
             if isActive {
-                callout
-                    .offset(y: -calloutH)
-                    .allowsHitTesting(false)
+                GeometryReader { geo in
+                    callout.position(calloutCenter(for: geo.size))
+                }
+                .allowsHitTesting(false)
             }
         }
         .zIndex(isActive ? 10 : 0)
     }
 
+    // Callout frame size varies by flick direction
+    private var calloutSize: CGSize {
+        switch dir {
+        case .center, .up, .down: return CGSize(width: 52, height: 61)
+        case .left, .right:       return CGSize(width: 61, height: 50)
+        }
+    }
+
+    private var calloutSide: CalloutShape.Side {
+        switch dir {
+        case .center, .up: return .bottom
+        case .down:        return .top
+        case .left:        return .right
+        case .right:       return .left
+        }
+    }
+
+    // Shift text toward bubble center (away from triangle)
+    private var calloutTextOffset: CGSize {
+        let t: CGFloat = 3.5
+        switch dir {
+        case .center, .up: return CGSize(width: 0, height: -t)
+        case .down:        return CGSize(width: 0, height:  t)
+        case .left:        return CGSize(width: -t, height: 0)
+        case .right:       return CGSize(width:  t, height: 0)
+        }
+    }
+
+    // Position callout so triangle tip touches the relevant key edge
+    private func calloutCenter(for keySize: CGSize) -> CGPoint {
+        let s = calloutSize
+        switch dir {
+        case .center, .up:
+            return CGPoint(x: keySize.width / 2,          y: -s.height / 2)
+        case .down:
+            return CGPoint(x: keySize.width / 2,          y: keySize.height + s.height / 2)
+        case .left:
+            return CGPoint(x: -s.width / 2,               y: keySize.height / 2)
+        case .right:
+            return CGPoint(x: keySize.width + s.width / 2, y: keySize.height / 2)
+        }
+    }
+
+    @ViewBuilder
     private var callout: some View {
+        let s = calloutSize
         ZStack {
-            CalloutShape()
+            CalloutShape(side: calloutSide)
                 .fill(Color(UIColor.systemBackground))
                 .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
             Text(chars.char(for: dir) ?? chars.center)
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundColor(isFlicking ? .accentColor : Color(UIColor.label))
-                .offset(y: -3)
+                .offset(x: calloutTextOffset.width, y: calloutTextOffset.height)
         }
-        .frame(width: calloutW, height: calloutH)
+        .frame(width: s.width, height: s.height)
     }
 }
 
@@ -509,7 +594,7 @@ struct FlickKeyboardView: View {
             } else {
                 applyModifier(modifierCycle)
             }
-        } else if isHiragana(char) {
+        } else if isHiragana(char) || char == "ー" {
             composingText += char
         } else {
             commitComposing()
