@@ -378,7 +378,7 @@ struct FlickKeyboardView: View {
 
     private var switchKey: some View {
         Button(action: {
-            if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
+            commitComposing()
             onSwitchToEnglish()
         }) {
             RoundedRectangle(cornerRadius: 6)
@@ -395,7 +395,7 @@ struct FlickKeyboardView: View {
 
     private var globeKey: some View {
         Button(action: {
-            if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
+            commitComposing()
             onNextKeyboard()
         }) {
             RoundedRectangle(cornerRadius: 6)
@@ -412,7 +412,7 @@ struct FlickKeyboardView: View {
 
     private var numberToggleKey: some View {
         Button(action: {
-            if !composingText.isEmpty { onInsert(composingText); composingText = ""; candidates = [] }
+            commitComposing()
             isNumberMode.toggle()
         }) {
             RoundedRectangle(cornerRadius: 6)
@@ -434,27 +434,30 @@ struct FlickKeyboardView: View {
         return s.value >= 0x3041 && s.value <= 0x3096
     }
 
+    private func commitComposing() {
+        guard !composingText.isEmpty else { return }
+        onInsert(candidates.first ?? composingText)
+        composingText = ""
+        candidates = []
+    }
+
     private func handleSelect(_ char: String, fromKey chars: FlickChars) {
         if isNumberMode {
-            if !composingText.isEmpty { onInsert(composingText); composingText = "" }
+            commitComposing()
             onInsert(char)
             return
         }
 
-        let isCenter = (char == chars.center)
-
         if chars.center == "゛" {
             if char == "小" {
-                // 上フリック: 小文字変換のみ
                 applyModifier(smallOnlyCycle)
             } else {
-                // センタータップ or 他方向フリック: 通常サイクル
                 applyModifier(modifierCycle)
             }
         } else if isHiragana(char) {
             composingText += char
         } else {
-            if !composingText.isEmpty { onInsert(composingText); composingText = "" }
+            commitComposing()
             onInsert(char)
         }
     }
