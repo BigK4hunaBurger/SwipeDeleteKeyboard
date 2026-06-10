@@ -105,12 +105,18 @@ private struct CalloutShape: Shape {
 
 struct FlickKey: View {
     let chars: FlickChars
+    var preferBelow: Bool = false
     let onSelect: (String) -> Void
 
     @State private var dir: FlickDirection = .center
     @State private var isActive = false
     @State private var isFlicking = false
     private let threshold: CGFloat = 22
+
+    // When preferBelow=true (top row), flip up/center callout downward to avoid clipping
+    private var calloutDir: FlickDirection {
+        preferBelow && (dir == .center || dir == .up) ? .down : dir
+    }
 
     var body: some View {
         ZStack {
@@ -164,16 +170,16 @@ struct FlickKey: View {
         .zIndex(isActive ? 10 : 0)
     }
 
-    // Callout frame size varies by flick direction
+    // Callout frame size varies by callout position direction
     private var calloutSize: CGSize {
-        switch dir {
+        switch calloutDir {
         case .center, .up, .down: return CGSize(width: 52, height: 61)
         case .left, .right:       return CGSize(width: 61, height: 50)
         }
     }
 
     private var calloutSide: CalloutShape.Side {
-        switch dir {
+        switch calloutDir {
         case .center, .up: return .bottom
         case .down:        return .top
         case .left:        return .right
@@ -184,7 +190,7 @@ struct FlickKey: View {
     // Shift text toward bubble center (away from triangle)
     private var calloutTextOffset: CGSize {
         let t: CGFloat = 3.5
-        switch dir {
+        switch calloutDir {
         case .center, .up: return CGSize(width: 0, height: -t)
         case .down:        return CGSize(width: 0, height:  t)
         case .left:        return CGSize(width: -t, height: 0)
@@ -195,13 +201,13 @@ struct FlickKey: View {
     // Position callout so triangle tip touches the relevant key edge
     private func calloutCenter(for keySize: CGSize) -> CGPoint {
         let s = calloutSize
-        switch dir {
+        switch calloutDir {
         case .center, .up:
-            return CGPoint(x: keySize.width / 2,          y: -s.height / 2)
+            return CGPoint(x: keySize.width / 2,           y: -s.height / 2)
         case .down:
-            return CGPoint(x: keySize.width / 2,          y: keySize.height + s.height / 2)
+            return CGPoint(x: keySize.width / 2,           y: keySize.height + s.height / 2)
         case .left:
-            return CGPoint(x: -s.width / 2,               y: keySize.height / 2)
+            return CGPoint(x: -s.width / 2,                y: keySize.height / 2)
         case .right:
             return CGPoint(x: keySize.width + s.width / 2, y: keySize.height / 2)
         }
@@ -371,7 +377,7 @@ struct FlickKeyboardView: View {
         VStack(spacing: sp) {
             ForEach(0..<currentGrid.count, id: \.self) { row in
                 let chars = currentGrid[row][col]
-                FlickKey(chars: chars) { char in
+                FlickKey(chars: chars, preferBelow: row == 0) { char in
                     handleSelect(char, fromKey: chars)
                 }
                 .frame(maxWidth: .infinity, minHeight: keySize, maxHeight: keySize)
