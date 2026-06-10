@@ -28,6 +28,38 @@ struct FlickChars {
     }
 }
 
+// MARK: - Callout shape (rounded rect + downward triangle)
+
+private struct CalloutShape: Shape {
+    var triWidth: CGFloat = 14
+    var triHeight: CGFloat = 7
+    var cornerRadius: CGFloat = 8
+
+    func path(in rect: CGRect) -> Path {
+        let bH = rect.height - triHeight
+        let r = cornerRadius
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+        p.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r),
+                 radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + bH - r))
+        p.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + bH - r),
+                 radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        p.addLine(to: CGPoint(x: rect.midX + triWidth / 2, y: rect.minY + bH))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.midX - triWidth / 2, y: rect.minY + bH))
+        p.addLine(to: CGPoint(x: rect.minX + r, y: rect.minY + bH))
+        p.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + bH - r),
+                 radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+        p.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r),
+                 radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        p.closeSubpath()
+        return p
+    }
+}
+
 // MARK: - FlickKey
 
 struct FlickKey: View {
@@ -38,11 +70,13 @@ struct FlickKey: View {
     @State private var isActive = false
     @State private var isFlicking = false
     private let threshold: CGFloat = 22
+    private let calloutW: CGFloat = 52
+    private let calloutH: CGFloat = 61 // 54 bubble + 7 triangle
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 6)
-                .fill(isActive ? Color(UIColor.systemGray2) : Color(UIColor.systemBackground))
+                .fill(isActive ? Color(UIColor.systemGray4) : Color(UIColor.systemBackground))
                 .shadow(color: .black.opacity(0.3), radius: 0, x: 0, y: 1)
 
             if isFlicking {
@@ -80,6 +114,27 @@ struct FlickKey: View {
                     isActive = false; isFlicking = false; dir = .center
                 }
         )
+        .overlay(alignment: .top) {
+            if isActive {
+                callout
+                    .offset(y: -calloutH)
+                    .allowsHitTesting(false)
+            }
+        }
+        .zIndex(isActive ? 10 : 0)
+    }
+
+    private var callout: some View {
+        ZStack {
+            CalloutShape()
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
+            Text(chars.char(for: dir) ?? chars.center)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(isFlicking ? .accentColor : Color(UIColor.label))
+                .offset(y: -3)
+        }
+        .frame(width: calloutW, height: calloutH)
     }
 }
 
@@ -151,7 +206,7 @@ struct FlickKeyboardView: View {
             ["か","が"],["き","ぎ"],["く","ぐ"],["け","げ"],["こ","ご"],
             ["さ","ざ"],["し","じ"],["す","ず"],["せ","ぜ"],["そ","ぞ"],
             ["た","だ"],["ち","ぢ"],["て","で"],["と","ど"],
-            ["つ","づ","っ"],           // 濁点→小文字→元
+            ["つ","っ","づ"],           // 小文字→濁点→元
             ["は","ば","ぱ"],["ひ","び","ぴ"],["ふ","ぶ","ぷ"],
             ["へ","べ","ぺ"],["ほ","ぼ","ぽ"],
             ["あ","ぁ"],["い","ぃ"],["う","ぅ"],["え","ぇ"],["お","ぉ"],
