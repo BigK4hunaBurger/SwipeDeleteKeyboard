@@ -364,8 +364,8 @@ struct FlickKeyboardView: View {
     @State private var candidates: [String] = []
     @State private var isNumberMode = false
     @State private var currentTheme: KeyboardTheme = {
-        let raw = UserDefaults.standard.string(forKey: "kbTheme") ?? ""
-        return KeyboardTheme(rawValue: raw) ?? .system
+        let ud = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
+        return KeyboardTheme(rawValue: ud.string(forKey: "kbTheme") ?? "") ?? .system
     }()
 
     private var theme: ThemeConfig { ThemeConfig.config(for: currentTheme) }
@@ -670,7 +670,8 @@ struct FlickKeyboardView: View {
     private var themeToggleKey: some View {
         Button(action: {
             currentTheme = currentTheme.next
-            UserDefaults.standard.set(currentTheme.rawValue, forKey: "kbTheme")
+            let ud = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
+            ud.set(currentTheme.rawValue, forKey: "kbTheme")
         }) {
             RoundedRectangle(cornerRadius: theme.keyRadius)
                 .fill(theme.funcBg)
@@ -685,6 +686,8 @@ struct FlickKeyboardView: View {
     }
 
     // MARK: - Input handling
+
+    private let composablePunctuation: Set<String> = ["〜", "、", "。", "？", "！", "…"]
 
     private func isHiragana(_ str: String) -> Bool {
         guard let s = str.unicodeScalars.first else { return false }
@@ -707,7 +710,7 @@ struct FlickKeyboardView: View {
         if chars.center == "゛" {
             if char == "小" { applyModifier(smallOnlyCycle) }
             else { applyModifier(modifierCycle) }
-        } else if isHiragana(char) || char == "ー" {
+        } else if isHiragana(char) || char == "ー" || composablePunctuation.contains(char) {
             composingText += char
         } else {
             commitComposing()
