@@ -303,6 +303,7 @@ private struct FlickCalloutKey: PreferenceKey {
 private struct FlickCalloutView: View {
     let data: FlickCalloutData
     let keyRect: CGRect
+    let bounds: CGSize
     @Environment(\.kbTheme) var theme
 
     private var size: CGSize {
@@ -333,16 +334,21 @@ private struct FlickCalloutView: View {
 
     private var center: CGPoint {
         let s = size
+        var c: CGPoint
         switch data.dir {
         case .center, .up:
-            return CGPoint(x: keyRect.midX, y: keyRect.minY - s.height / 2)
+            c = CGPoint(x: keyRect.midX, y: keyRect.minY - s.height / 2)
         case .down:
-            return CGPoint(x: keyRect.midX, y: keyRect.maxY + s.height / 2)
+            c = CGPoint(x: keyRect.midX, y: keyRect.maxY + s.height / 2)
         case .left:
-            return CGPoint(x: keyRect.minX - s.width / 2, y: keyRect.midY)
+            c = CGPoint(x: keyRect.minX - s.width / 2, y: keyRect.midY)
         case .right:
-            return CGPoint(x: keyRect.maxX + s.width / 2, y: keyRect.midY)
+            c = CGPoint(x: keyRect.maxX + s.width / 2, y: keyRect.midY)
         }
+        // キーボード拡張はビュー領域外に描画できないため、はみ出す分を内側に寄せる
+        c.x = min(max(s.width / 2 + 1, c.x), bounds.width - s.width / 2 - 1)
+        c.y = min(max(s.height / 2 + 1, c.y), bounds.height - s.height / 2 - 1)
+        return c
     }
 
     var body: some View {
@@ -541,7 +547,7 @@ struct FlickKeyboardView: View {
         .overlayPreferenceValue(FlickCalloutKey.self) { data in
             if let data = data {
                 GeometryReader { proxy in
-                    FlickCalloutView(data: data, keyRect: proxy[data.anchor])
+                    FlickCalloutView(data: data, keyRect: proxy[data.anchor], bounds: proxy.size)
                 }
                 .allowsHitTesting(false)
             }
