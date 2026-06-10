@@ -496,9 +496,7 @@ struct FlickKeyboardView: View {
     private var returnKey: some View {
         Button(action: {
             if !composingText.isEmpty {
-                // 入力中は先頭候補を確定
-                let first = candidates.first ?? composingText
-                onInsert(first)
+                onInsert(composingText)
                 composingText = ""; candidates = []
             } else {
                 onReturn()
@@ -576,7 +574,7 @@ struct FlickKeyboardView: View {
 
     private func commitComposing() {
         guard !composingText.isEmpty else { return }
-        onInsert(candidates.first ?? composingText)
+        onInsert(composingText)
         composingText = ""
         candidates = []
     }
