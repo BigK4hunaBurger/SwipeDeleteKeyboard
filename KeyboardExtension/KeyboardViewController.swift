@@ -504,10 +504,10 @@ final class KeyboardViewController: UIInputViewController {
             grid[2][0] = .modeABC
         case .abc:
             grid[1][0] = .mode123
-            grid[2][0] = .modeKana
+            grid[2][0] = isJapaneseLayout ? .modeKana : nil
         case .number:
-            grid[1][0] = .modeKana
-            grid[2][0] = .modeABC
+            grid[1][0] = isJapaneseLayout ? .modeKana : .modeABC
+            grid[2][0] = isJapaneseLayout ? .modeABC : nil
         }
         grid[3][0] = .globe
 
@@ -860,7 +860,7 @@ final class KeyboardViewController: UIInputViewController {
         // キーボード拡張はビュー領域の外に描画できない(描画してもシステムに切られる)ので
         // ガイド全体が必ず領域内に収まるよう上下左右ともクランプする
         let pad: CGFloat = 2
-        var c = CGPoint(x: key.center.x, y: key.center.y - 10)
+        var c = CGPoint(x: key.center.x, y: key.center.y)
         c.x = min(max(g.bounds.width / 2 + pad, c.x), view.bounds.width - g.bounds.width / 2 - pad)
         c.y = min(max(g.bounds.height / 2 + pad, c.y), view.bounds.height - g.bounds.height / 2 - pad)
         g.center = c
@@ -1004,7 +1004,7 @@ final class KeyboardViewController: UIInputViewController {
             let before = textDocumentProxy.documentContextBeforeInput ?? ""
             var snippet = String(before.suffix(bsRangeCount))
             if snippet.count > 12 { snippet = "…" + snippet.suffix(11) }
-            lb.text = "「\(snippet)」"
+            lb.text = snippet
         }
         lb.sizeToFit()
         let w = lb.bounds.width + 24
