@@ -998,12 +998,12 @@ final class KeyboardViewController: UIInputViewController {
     private func updateDeletePreview() {
         guard let lb = bsPreviewLabel else { return }
         if bsRangeCount == 0 {
-            lb.text = "◀ スライドで削除範囲を選択"
+            lb.text = "◀ スライドで削除"
         } else {
             let before = textDocumentProxy.documentContextBeforeInput ?? ""
             var snippet = String(before.suffix(bsRangeCount))
             if snippet.count > 12 { snippet = "…" + snippet.suffix(11) }
-            lb.text = "「\(snippet)」を削除 (\(bsRangeCount)文字)"
+            lb.text = "「\(snippet)」"
         }
         lb.sizeToFit()
         let w = lb.bounds.width + 24
