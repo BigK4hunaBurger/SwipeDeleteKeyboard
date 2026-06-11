@@ -117,7 +117,7 @@ struct ContentView: View {
             Toggle(isOn: $japaneseLayout) {
                 Label("日本語フリック入力", systemImage: "character.ja")
             }
-            .onChange(of: japaneseLayout) { _, newValue in
+            .onChange(of: japaneseLayout) { newValue in
                 sharedUD.set(newValue, forKey: "kbLayoutJapanese")
                 UserDefaults.standard.set(newValue, forKey: "kbLayoutJapanese")
             }
