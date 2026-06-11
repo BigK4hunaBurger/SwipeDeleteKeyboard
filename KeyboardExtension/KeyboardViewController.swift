@@ -385,6 +385,7 @@ final class FlickGuideView: UIView {
     func highlight(_ d: FlickDirection, palette: ThemePalette) {
         for (dir, bubble) in bubbles {
             let on = dir == d
+            bubble.isHidden = (d != .center && !on)
             bubble.backgroundColor = on ? palette.popupHighlight : palette.popupBg
             labels[dir]?.textColor = on ? .white : palette.popupText
             bubble.transform = on ? CGAffineTransform(scaleX: 1.15, y: 1.15) : .identity
@@ -503,10 +504,10 @@ final class KeyboardViewController: UIInputViewController {
             grid[2][0] = .modeABC
         case .abc:
             grid[1][0] = .mode123
-            grid[2][0] = isJapaneseLayout ? .modeKana : nil
+            grid[2][0] = .modeKana
         case .number:
-            grid[1][0] = isJapaneseLayout ? .modeKana : .modeABC
-            grid[2][0] = isJapaneseLayout ? .modeABC : nil
+            grid[1][0] = .modeKana
+            grid[2][0] = .modeABC
         }
         grid[3][0] = .globe
 
