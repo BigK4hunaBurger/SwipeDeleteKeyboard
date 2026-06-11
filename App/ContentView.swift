@@ -74,12 +74,18 @@ struct ContentView: View {
     @State private var selectedTheme: KBTheme = {
         KBTheme(rawValue: sharedUD.string(forKey: "kbTheme") ?? "") ?? .system
     }()
+    @State private var japaneseLayout: Bool = {
+        if let v = sharedUD.object(forKey: "kbLayoutJapanese") as? Bool { return v }
+        if let v = UserDefaults.standard.object(forKey: "kbLayoutJapanese") as? Bool { return v }
+        return true
+    }()
 
     var body: some View {
         NavigationStack {
             List {
                 setupSection
                 usageSection
+                layoutSection
                 themeSection
             }
             .navigationTitle("SwipeDelete Keyboard")
@@ -103,6 +109,25 @@ struct ContentView: View {
             Label("空白キーを左右にスライドでカーソル移動", systemImage: "cursorarrow.motionlines")
             Label("小゛゜タップで 小文字 → 濁点 → 半濁点 を循環", systemImage: "textformat.alt")
             Label("⤺ で直前の入力/削除を取り消し", systemImage: "arrow.uturn.backward")
+        }
+    }
+
+    private var layoutSection: some View {
+        Section {
+            Toggle(isOn: $japaneseLayout) {
+                Label("日本語フリック入力", systemImage: "character.ja")
+            }
+            .onChange(of: japaneseLayout) { _, newValue in
+                sharedUD.set(newValue, forKey: "kbLayoutJapanese")
+                UserDefaults.standard.set(newValue, forKey: "kbLayoutJapanese")
+            }
+        } header: {
+            Text("言語")
+        } footer: {
+            Text(japaneseLayout
+                 ? "かな入力・漢字変換・候補バーが有効になります。"
+                 : "英数字のみの12キー配列になります。")
+                .font(.caption)
         }
     }
 

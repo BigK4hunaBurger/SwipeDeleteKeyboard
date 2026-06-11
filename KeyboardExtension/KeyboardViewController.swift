@@ -396,8 +396,13 @@ final class FlickGuideView: UIView {
 
 final class KeyboardViewController: UIInputViewController {
 
-    // 端末の言語設定が日本語でなければ、かなモードと候補バーを出さない
-    private let isJapaneseEnvironment = Locale.preferredLanguages.first?.hasPrefix("ja") ?? false
+    private var isJapaneseLayout = true
+
+    private static func loadJapaneseLayout() -> Bool {
+        if let v = UserDefaults(suiteName: KeyboardTheme.suiteName)?.object(forKey: "kbLayoutJapanese") as? Bool { return v }
+        if let v = UserDefaults.standard.object(forKey: "kbLayoutJapanese") as? Bool { return v }
+        return true
+    }
 
     private var mode: KeyboardMode = .kana
     private var theme = KeyboardTheme.load()
@@ -413,7 +418,7 @@ final class KeyboardViewController: UIInputViewController {
     private var candidates: [String] = []
     private let candidateBar = UIScrollView()
     private let candidateStack = UIStackView()
-    private var topBarHeight: CGFloat { isJapaneseEnvironment ? 42 : 0 }
+    private var topBarHeight: CGFloat { isJapaneseLayout ? 42 : 0 }
 
     // フリック状態
     private var activeKey: KeyView?
@@ -442,13 +447,20 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if !isJapaneseEnvironment { mode = .abc }
+        isJapaneseLayout = Self.loadJapaneseLayout()
+        if !isJapaneseLayout { mode = .abc }
         setupCandidateBar()
         buildKeyboard()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        let newLayout = Self.loadJapaneseLayout()
+        let layoutChanged = newLayout != isJapaneseLayout
+        if layoutChanged {
+            isJapaneseLayout = newLayout
+            mode = isJapaneseLayout ? .kana : .abc
+        }
         if heightConstraint == nil {
             let h = NSLayoutConstraint(item: view!, attribute: .height, relatedBy: .equal,
                                        toItem: nil, attribute: .notAnAttribute,
@@ -456,6 +468,8 @@ final class KeyboardViewController: UIInputViewController {
             h.priority = .init(999)
             view.addConstraint(h)
             heightConstraint = h
+        } else if layoutChanged {
+            heightConstraint?.constant = 236 + topBarHeight
         }
         // セッションをまたいだ composing は無効(marked textは保持されない)
         composingText = ""
@@ -463,6 +477,7 @@ final class KeyboardViewController: UIInputViewController {
         reloadCandidateBar()
         theme = KeyboardTheme.load()   // 本体アプリでの変更を反映
         applyTheme()
+        if layoutChanged { buildKeyboard() }
     }
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
@@ -488,10 +503,10 @@ final class KeyboardViewController: UIInputViewController {
             grid[2][0] = .modeABC
         case .abc:
             grid[1][0] = .mode123
-            grid[2][0] = isJapaneseEnvironment ? .modeKana : nil
+            grid[2][0] = isJapaneseLayout ? .modeKana : nil
         case .number:
-            grid[1][0] = isJapaneseEnvironment ? .modeKana : .modeABC
-            grid[2][0] = isJapaneseEnvironment ? .modeABC : nil
+            grid[1][0] = isJapaneseLayout ? .modeKana : .modeABC
+            grid[2][0] = isJapaneseLayout ? .modeABC : nil
         }
         grid[3][0] = .globe
 
@@ -551,10 +566,10 @@ final class KeyboardViewController: UIInputViewController {
         case .backspace:
             key.titleLabel.text = "⌫"; key.isSpecial = true
         case .space:
-            key.titleLabel.text = (mode == .abc || !isJapaneseEnvironment) ? "space" : "空白"
+            key.titleLabel.text = (mode == .abc || !isJapaneseLayout) ? "space" : "空白"
             key.isSpecial = true
         case .newline:
-            key.titleLabel.text = (mode == .abc || !isJapaneseEnvironment) ? "return" : "改行"
+            key.titleLabel.text = (mode == .abc || !isJapaneseLayout) ? "return" : "改行"
             key.isAccent = true
         case .modeKana:
             key.titleLabel.text = "あいう"; key.isSpecial = true
@@ -707,7 +722,7 @@ final class KeyboardViewController: UIInputViewController {
 
     private func updateReturnKeyTitle() {
         guard let key = keys.first(where: { if case .newline = $0.action { return true }; return false }) else { return }
-        if mode == .abc || !isJapaneseEnvironment {
+        if mode == .abc || !isJapaneseLayout {
             key.titleLabel.text = "return"
         } else {
             key.titleLabel.text = composingText.isEmpty ? "改行" : "確定"
@@ -796,7 +811,7 @@ final class KeyboardViewController: UIInputViewController {
                     // 変換中の空白 = 無変換のまま確定(誤変換を防ぐ)
                     commitComposingRaw()
                 } else {
-                    insert((mode == .abc || !isJapaneseEnvironment) ? " " : "　")
+                    insert((mode == .abc || !isJapaneseLayout) ? " " : "　")
                 }
             }
         case .newline:
