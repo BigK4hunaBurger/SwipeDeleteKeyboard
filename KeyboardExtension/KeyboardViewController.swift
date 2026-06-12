@@ -575,10 +575,22 @@ final class KeyboardViewController: UIInputViewController {
             key.isAccent = true
         case .modeKana:
             key.titleLabel.text = "あいう"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .modeABC:
             key.titleLabel.text = "ABC"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .mode123:
             key.titleLabel.text = "☆123"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .globe:
             key.titleLabel.text = "🌐"; key.isSpecial = true
             // 純正同様、地球儀はシステムの入力切替を呼ぶ(このキーだけUIControlとして動く)
@@ -842,6 +854,24 @@ final class KeyboardViewController: UIInputViewController {
         case .globe:
             break   // handleInputModeList が処理
         }
+    }
+
+    // MARK: モードキー (UIControl として直接登録)
+
+    @objc private func modeKeyDown(_ sender: KeyView) { sender.alpha = 0.6 }
+    @objc private func modeKeyUp(_ sender: KeyView)   { sender.alpha = 1.0 }
+
+    @objc private func modeKeyTapped(_ sender: KeyView) {
+        sender.alpha = 1.0
+        commitComposingRaw()
+        switch sender.action {
+        case .modeABC:  mode = .abc
+        case .modeKana: mode = .kana
+        case .mode123:  mode = .number
+        default: return
+        }
+        UIDevice.current.playInputClick()
+        buildKeyboard()
     }
 
     private func direction(dx: CGFloat, dy: CGFloat) -> FlickDirection {
