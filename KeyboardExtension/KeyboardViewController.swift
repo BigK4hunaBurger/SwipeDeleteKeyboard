@@ -419,7 +419,7 @@ final class KeyboardViewController: UIInputViewController {
     private var candidates: [String] = []
     private let candidateBar = UIScrollView()
     private let candidateStack = UIStackView()
-    private var topBarHeight: CGFloat { isJapaneseLayout ? 42 : 0 }
+    private var topBarHeight: CGFloat { isJapaneseLayout && mode == .kana ? 42 : 0 }
 
     // フリック状態
     private var activeKey: KeyView?
@@ -491,6 +491,7 @@ final class KeyboardViewController: UIInputViewController {
     private func buildKeyboard() {
         keys.forEach { $0.removeFromSuperview() }
         keys.removeAll()
+        heightConstraint?.constant = 236 + topBarHeight
 
         // 5列 × 4行 (改行は右列の3-4行を結合)
         var grid: [[KeyAction?]] = Array(repeating: Array(repeating: nil, count: 5), count: 4)
@@ -974,8 +975,8 @@ final class KeyboardViewController: UIInputViewController {
             bsRangeMode = true
             bsRepeatTimer?.invalidate()
             bsRepeatTimer = nil
-            // 範囲削除は文書に対して行う: 変換中の文字は先に無変換確定してから対象にする
-            commitComposingRaw()
+            // 範囲削除は文書に対して行う: 変換中の文字は破棄(確定させない)
+            setComposing("")
             showDeletePreview()
         }
         let available = textDocumentProxy.documentContextBeforeInput?.count ?? 0
