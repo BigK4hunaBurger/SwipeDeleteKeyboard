@@ -975,8 +975,8 @@ final class KeyboardViewController: UIInputViewController {
             bsRangeMode = true
             bsRepeatTimer?.invalidate()
             bsRepeatTimer = nil
-            // 範囲削除は文書に対して行う: 変換中の文字は破棄(確定させない)
-            setComposing("")
+            // 範囲削除は文書に対して行う: 変換中の文字は先に無変換確定してから対象にする
+            commitComposingRaw()
             showDeletePreview()
         }
         let available = textDocumentProxy.documentContextBeforeInput?.count ?? 0
