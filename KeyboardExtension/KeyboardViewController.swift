@@ -395,6 +395,80 @@ final class FlickGuideView: UIView {
     }
 }
 
+// MARK: - テーマピッカー
+
+final class ThemePickerView: UIView {
+    var onSelect: ((KeyboardTheme) -> Void)?
+
+    init(current: KeyboardTheme, palette: ThemePalette, darkMode: Bool) {
+        super.init(frame: .zero)
+        backgroundColor = palette.background
+
+        let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(scroll)
+        NSLayoutConstraint.activate([
+            scroll.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 7
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 10),
+            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -10),
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 5),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -5),
+            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -10),
+        ])
+
+        for theme in KeyboardTheme.allCases {
+            let p = theme.palette(darkMode: darkMode)
+            let btn = UIButton(type: .custom)
+            btn.setTitle(theme.displayName, for: .normal)
+            btn.setTitleColor(p.keyText, for: .normal)
+            btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+            btn.backgroundColor = p.keyBg
+            btn.layer.cornerRadius = p.cornerRadius + 1
+            btn.contentEdgeInsets = UIEdgeInsets(top: 3, left: 10, bottom: 3, right: 10)
+            // 選択中テーマはアクセントカラーの枠で強調
+            btn.layer.borderWidth = (theme == current) ? 2.5 : 0
+            btn.layer.borderColor = p.popupHighlight.cgColor
+            btn.layer.shadowColor = UIColor.black.cgColor
+            btn.layer.shadowOpacity = 0.25
+            btn.layer.shadowRadius = 2
+            btn.layer.shadowOffset = CGSize(width: 0, height: 1)
+            btn.tag = KeyboardTheme.allCases.firstIndex(of: theme) ?? 0
+            btn.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
+            // アクセントカラーを小さい丸で右上に表示
+            let dot = UIView()
+            dot.backgroundColor = p.returnBg
+            dot.layer.cornerRadius = 4
+            dot.translatesAutoresizingMaskIntoConstraints = false
+            btn.addSubview(dot)
+            NSLayoutConstraint.activate([
+                dot.widthAnchor.constraint(equalToConstant: 8),
+                dot.heightAnchor.constraint(equalToConstant: 8),
+                dot.topAnchor.constraint(equalTo: btn.topAnchor, constant: 4),
+                dot.trailingAnchor.constraint(equalTo: btn.trailingAnchor, constant: -4),
+            ])
+            stack.addArrangedSubview(btn)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    @objc private func tapped(_ sender: UIButton) {
+        onSelect?(KeyboardTheme.allCases[sender.tag])
+    }
+}
+
 // MARK: - メイン ViewController
 
 final class KeyboardViewController: UIInputViewController {
@@ -621,10 +695,11 @@ final class KeyboardViewController: UIInputViewController {
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
             key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .globe:
-            key.titleLabel.text = "🌐"; key.isSpecial = true
-            // 純正同様、地球儀はシステムの入力切替を呼ぶ(このキーだけUIControlとして動く)
+            key.titleLabel.text = "🎨"; key.isSpecial = true
             key.isUserInteractionEnabled = true
-            key.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
+            key.addTarget(self, action: #selector(themeButtonTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .undo:
             key.titleLabel.text = "⤺"; key.isSpecial = true
         }
@@ -804,8 +879,6 @@ final class KeyboardViewController: UIInputViewController {
             spaceCursorMode = false
             spaceAccumulatedDX = 0
             spaceMoved = false
-        case .undo:
-            scheduleThemeCyclePress()
         default:
             break
         }
@@ -829,7 +902,7 @@ final class KeyboardViewController: UIInputViewController {
         case .space:
             handleSpaceSlide(dx: dx)
         default:
-            if hypot(dx, dy) > 30 { cancelThemeCyclePress() }
+            break
         }
     }
 
@@ -847,7 +920,6 @@ final class KeyboardViewController: UIInputViewController {
             activeKey = nil
             hideGuide()
             stopBackspace()
-            cancelThemeCyclePress()
         }
         guard let key = activeKey, !cancelled else { return }
 
@@ -895,12 +967,10 @@ final class KeyboardViewController: UIInputViewController {
             commitComposingRaw()
             mode = .number; buildKeyboard()
         case .undo:
-            if !themeCycled {
-                if !composingText.isEmpty {
-                    setComposing("")   // 変換中: 未確定文字のクリア
-                } else {
-                    performUndo()
-                }
+            if !composingText.isEmpty {
+                setComposing("")   // 変換中: 未確定文字のクリア
+            } else {
+                performUndo()
             }
         case .globe:
             break   // handleInputModeList が処理
@@ -1158,26 +1228,43 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    // MARK: ⤺ 長押しでテーマ切替
+    // MARK: テーマピッカー
 
-    private var themeCycleTimer: Timer?
-    private var themeCycled = false
+    private var themePickerView: ThemePickerView?
 
-    private func scheduleThemeCyclePress() {
-        themeCycled = false
-        themeCycleTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.theme = self.theme.next
-            self.theme.save()
-            self.applyTheme()
-            self.themeCycled = true
-            self.showThemeToast()
+    @objc private func themeButtonTapped(_ sender: KeyView) {
+        sender.alpha = 1.0
+        if themePickerView != nil {
+            hideThemePicker()
+        } else {
+            showThemePicker()
         }
+        UIDevice.current.playInputClick()
     }
 
-    private func cancelThemeCyclePress() {
-        themeCycleTimer?.invalidate()
-        themeCycleTimer = nil
+    private func showThemePicker() {
+        hideThemePicker()
+        let picker = ThemePickerView(
+            current: theme,
+            palette: palette,
+            darkMode: traitCollection.userInterfaceStyle == .dark
+        )
+        picker.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 42)
+        picker.onSelect = { [weak self] selected in
+            guard let self else { return }
+            self.theme = selected
+            self.theme.save()
+            self.applyTheme()
+            self.hideThemePicker()
+            self.showThemeToast()
+        }
+        view.addSubview(picker)
+        themePickerView = picker
+    }
+
+    private func hideThemePicker() {
+        themePickerView?.removeFromSuperview()
+        themePickerView = nil
     }
 
     // MARK: QWERTY レイアウト
@@ -1230,7 +1317,9 @@ final class KeyboardViewController: UIInputViewController {
             key.tag = tag
             if case .globe = action {
                 key.isUserInteractionEnabled = true
-                key.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
+                key.addTarget(self, action: #selector(themeButtonTapped(_:)), for: .touchUpInside)
+                key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+                key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
             } else {
                 key.isUserInteractionEnabled = true
                 key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
@@ -1252,7 +1341,7 @@ final class KeyboardViewController: UIInputViewController {
         spaceKey.tag = 1062
         view.addSubview(spaceKey); keys.append(spaceKey)
 
-        makeCtrl(.globe, text: "🌐", tag: 1063)
+        makeCtrl(.globe, text: "🎨", tag: 1063)
 
         let returnKey = KeyView(action: .newline)
         returnKey.titleLabel.text = "return"; returnKey.isAccent = true
