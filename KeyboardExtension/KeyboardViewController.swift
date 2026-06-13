@@ -421,7 +421,7 @@ final class KeyboardViewController: UIInputViewController {
     private var candidates: [String] = []
     private let candidateBar = UIScrollView()
     private let candidateStack = UIStackView()
-    private var topBarHeight: CGFloat { isJapaneseLayout && mode == .kana ? 42 : 0 }
+    private var topBarHeight: CGFloat { (isJapaneseLayout && mode == .kana) || mode == .qwerty ? 42 : 0 }
 
     // フリック状態
     private var activeKey: KeyView?
@@ -499,7 +499,7 @@ final class KeyboardViewController: UIInputViewController {
         isShifted = false
 
         if mode == .qwerty {
-            heightConstraint?.constant = 236
+            heightConstraint?.constant = 236 + topBarHeight   // 42pt 候補バーエリアを確保
             buildQwertyKeys()
             return
         }
@@ -1243,9 +1243,10 @@ final class KeyboardViewController: UIInputViewController {
 
     private func layoutQwertyKeys() {
         let m: CGFloat = 5
-        let outerH: CGFloat = 4, outerV: CGFloat = 4
+        let outerH: CGFloat = 4, outerV: CGFloat = 3
+        let top = topBarHeight + outerV          // 候補バーエリアの下から開始
         let totalW = view.bounds.width - outerH * 2
-        let totalH = view.bounds.height - outerV * 2
+        let totalH = view.bounds.height - top - outerV
         guard totalW > 0, totalH > 0 else { return }
         let rowH = (totalH - m * 3) / 4
 
@@ -1259,7 +1260,7 @@ final class KeyboardViewController: UIInputViewController {
             guard t >= 1000 else { continue }
             let row = (t - 1000) / 20
             let col = (t - 1000) % 20
-            let y = outerV + CGFloat(row) * (rowH + m)
+            let y = top + CGFloat(row) * (rowH + m)
             var x: CGFloat
             var w: CGFloat = keyW
 
