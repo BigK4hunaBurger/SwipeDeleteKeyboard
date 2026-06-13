@@ -183,12 +183,14 @@ enum KeyAction {
     case newline
     case modeKana
     case modeABC
+    case modeQWERTY
     case mode123
     case globe
     case undo
+    case shift
 }
 
-enum KeyboardMode { case kana, abc, number }
+enum KeyboardMode { case kana, abc, number, qwerty }
 
 // MARK: - 入力マップ(純正準拠)
 
@@ -428,6 +430,9 @@ final class KeyboardViewController: UIInputViewController {
     private var guideView: FlickGuideView?
     private let flickThreshold: CGFloat = 16
 
+    // QWERTY シフト状態
+    private var isShifted = false
+
     // バックスペース状態
     private var bsRepeatTimer: Timer?
     private var bsDeletedDuringHold = false
@@ -449,7 +454,7 @@ final class KeyboardViewController: UIInputViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         isJapaneseLayout = Self.loadJapaneseLayout()
-        if !isJapaneseLayout { mode = .abc }
+        if !isJapaneseLayout { mode = .qwerty }
         setupCandidateBar()
         buildKeyboard()
     }
@@ -460,7 +465,7 @@ final class KeyboardViewController: UIInputViewController {
         let layoutChanged = newLayout != isJapaneseLayout
         if layoutChanged {
             isJapaneseLayout = newLayout
-            mode = isJapaneseLayout ? .kana : .abc
+            mode = isJapaneseLayout ? .kana : .qwerty
         }
         if heightConstraint == nil {
             let h = NSLayoutConstraint(item: view!, attribute: .height, relatedBy: .equal,
@@ -491,24 +496,33 @@ final class KeyboardViewController: UIInputViewController {
     private func buildKeyboard() {
         keys.forEach { $0.removeFromSuperview() }
         keys.removeAll()
+        isShifted = false
+
+        if mode == .qwerty {
+            heightConstraint?.constant = 236
+            buildQwertyKeys()
+            return
+        }
+
         heightConstraint?.constant = 236 + topBarHeight
 
         // 5列 × 4行 (改行は右列の3-4行を結合)
         var grid: [[KeyAction?]] = Array(repeating: Array(repeating: nil, count: 5), count: 4)
 
-        // 左列(純正準拠): ⤺ / ☆123 / ABC / 🌐 — モードにより表示が入れ替わる
-        // 日本語環境以外では かなモードへの切替を出さない
+        // 左列(純正準拠): ⤺ / ☆123 / 英字/かな / 🌐 — モードにより表示が入れ替わる
         grid[0][0] = .undo
         switch mode {
         case .kana:
             grid[1][0] = .mode123
-            grid[2][0] = .modeABC
+            grid[2][0] = .modeQWERTY          // ABC → QWERTYモードへ
         case .abc:
             grid[1][0] = .mode123
-            grid[2][0] = isJapaneseLayout ? .modeKana : nil
+            grid[2][0] = isJapaneseLayout ? .modeKana : .modeQWERTY
         case .number:
-            grid[1][0] = isJapaneseLayout ? .modeKana : .modeABC
+            grid[1][0] = isJapaneseLayout ? .modeKana : .modeQWERTY
             grid[2][0] = isJapaneseLayout ? .modeABC : nil
+        case .qwerty:
+            break   // qwerty は上の早期リターンで処理済み
         }
         grid[3][0] = .globe
 
@@ -532,6 +546,8 @@ final class KeyboardViewController: UIInputViewController {
             for r in 0..<4 {
                 for c in 0..<3 { grid[r][c + 1] = .input(numberKeys[r][c]) }
             }
+        case .qwerty:
+            break   // 上の早期リターンで処理済み
         }
 
         // 右列: ⌫ / 空白 / 改行(結合)
@@ -568,10 +584,10 @@ final class KeyboardViewController: UIInputViewController {
         case .backspace:
             key.titleLabel.text = "⌫"; key.isSpecial = true
         case .space:
-            key.titleLabel.text = (mode == .abc || !isJapaneseLayout) ? "space" : "空白"
+            key.titleLabel.text = (mode == .abc || mode == .qwerty || !isJapaneseLayout) ? "space" : "空白"
             key.isSpecial = true
         case .newline:
-            key.titleLabel.text = (mode == .abc || !isJapaneseLayout) ? "return" : "改行"
+            key.titleLabel.text = (mode == .abc || mode == .qwerty || !isJapaneseLayout) ? "return" : "改行"
             key.isAccent = true
         case .modeKana:
             key.titleLabel.text = "あいう"; key.isSpecial = true
@@ -580,9 +596,21 @@ final class KeyboardViewController: UIInputViewController {
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
             key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .modeABC:
+            key.titleLabel.text = "abc"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
+        case .modeQWERTY:
             key.titleLabel.text = "ABC"; key.isSpecial = true
             key.isUserInteractionEnabled = true
             key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
+        case .shift:
+            key.titleLabel.text = "⇧"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(shiftKeyTapped(_:)), for: .touchUpInside)
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
             key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .mode123:
@@ -608,6 +636,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func layoutKeys() {
+        if mode == .qwerty { layoutQwertyKeys(); return }
         let m: CGFloat = 3                                  // キー間マージン
         let outerH: CGFloat = 3, outerV: CGFloat = 3
         let top = topBarHeight + outerV
@@ -630,7 +659,7 @@ final class KeyboardViewController: UIInputViewController {
             switch key.action {
             case .input:
                 key.titleLabel.font = palette.keyFont(size: base * 0.42, weight: .regular)
-            case .space, .newline, .modeKana, .modeABC, .mode123, .smallDakuten:
+            case .space, .newline, .modeKana, .modeABC, .modeQWERTY, .mode123, .smallDakuten, .shift:
                 key.titleLabel.font = palette.keyFont(size: base * 0.30, weight: .medium)
             default:
                 key.titleLabel.font = palette.keyFont(size: base * 0.40, weight: .regular)
@@ -736,7 +765,7 @@ final class KeyboardViewController: UIInputViewController {
 
     private func updateReturnKeyTitle() {
         guard let key = keys.first(where: { if case .newline = $0.action { return true }; return false }) else { return }
-        if mode == .abc || !isJapaneseLayout {
+        if mode == .abc || mode == .qwerty || !isJapaneseLayout {
             key.titleLabel.text = "return"
         } else {
             key.titleLabel.text = composingText.isEmpty ? "改行" : "確定"
@@ -756,7 +785,7 @@ final class KeyboardViewController: UIInputViewController {
 
         switch key.action {
         case .input(let map):
-            showGuide(for: key, map: map)
+            if mode != .qwerty { showGuide(for: key, map: map) }
         case .backspace:
             startBackspaceHold()
         case .space:
@@ -812,7 +841,8 @@ final class KeyboardViewController: UIInputViewController {
 
         switch key.action {
         case .input(let map):
-            if let s = map.value(currentDirection) {
+            let dir = (mode == .qwerty) ? FlickDirection.center : currentDirection
+            if let s = map.value(dir) {
                 handleInput(s)
             }
         case .smallDakuten:
@@ -825,7 +855,7 @@ final class KeyboardViewController: UIInputViewController {
                     // 変換中の空白 = 無変換のまま確定(誤変換を防ぐ)
                     commitComposingRaw()
                 } else {
-                    insert((mode == .abc || !isJapaneseLayout) ? " " : "　")
+                    insert((mode == .abc || mode == .qwerty || !isJapaneseLayout) ? " " : "　")
                 }
             }
         case .newline:
@@ -834,12 +864,17 @@ final class KeyboardViewController: UIInputViewController {
             } else {
                 insert("\n")
             }
+        case .shift:
+            break   // shiftKeyTapped が処理
         case .modeKana:
             commitComposingRaw()
             mode = .kana; buildKeyboard()
         case .modeABC:
             commitComposingRaw()
             mode = .abc; buildKeyboard()
+        case .modeQWERTY:
+            commitComposingRaw()
+            mode = .qwerty; buildKeyboard()
         case .mode123:
             commitComposingRaw()
             mode = .number; buildKeyboard()
@@ -865,13 +900,21 @@ final class KeyboardViewController: UIInputViewController {
         sender.alpha = 1.0
         commitComposingRaw()
         switch sender.action {
-        case .modeABC:  mode = .abc
-        case .modeKana: mode = .kana
-        case .mode123:  mode = .number
+        case .modeABC:    mode = .abc
+        case .modeKana:   mode = .kana
+        case .modeQWERTY: mode = .qwerty
+        case .mode123:    mode = .number
         default: return
         }
         UIDevice.current.playInputClick()
         buildKeyboard()
+    }
+
+    @objc private func shiftKeyTapped(_ sender: KeyView) {
+        sender.alpha = 1.0
+        isShifted.toggle()
+        updateQwertyCase()
+        UIDevice.current.playInputClick()
     }
 
     private func direction(dx: CGFloat, dy: CGFloat) -> FlickDirection {
@@ -913,7 +956,15 @@ final class KeyboardViewController: UIInputViewController {
             UIDevice.current.playInputClick()
         } else {
             commitComposingRaw()
-            insert(s)
+            let output: String
+            if mode == .qwerty && isShifted {
+                output = s.uppercased()
+                isShifted = false
+                updateQwertyCase()
+            } else {
+                output = s
+            }
+            insert(output)
         }
     }
 
@@ -1105,6 +1156,165 @@ final class KeyboardViewController: UIInputViewController {
     private func cancelThemeCyclePress() {
         themeCycleTimer?.invalidate()
         themeCycleTimer = nil
+    }
+
+    // MARK: QWERTY レイアウト
+
+    private func buildQwertyKeys() {
+        let rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+
+        // Row 0: Q-P (tags 1000-1009)
+        for (i, ch) in rows[0].enumerated() {
+            let c = String(ch)
+            let key = KeyView(action: .input(FlickMap(center: c, left: nil, up: nil, right: nil, down: nil)))
+            key.titleLabel.text = c
+            key.tag = 1000 + i
+            view.addSubview(key); keys.append(key)
+        }
+
+        // Row 1: A-L (tags 1020-1028)
+        for (i, ch) in rows[1].enumerated() {
+            let c = String(ch)
+            let key = KeyView(action: .input(FlickMap(center: c, left: nil, up: nil, right: nil, down: nil)))
+            key.titleLabel.text = c
+            key.tag = 1020 + i
+            view.addSubview(key); keys.append(key)
+        }
+
+        // Row 2: ⇧(1040), Z-M(1041-1047), ⌫(1048)
+        let shiftKey = KeyView(action: .shift)
+        configure(shiftKey, action: .shift)
+        shiftKey.tag = 1040
+        view.addSubview(shiftKey); keys.append(shiftKey)
+
+        for (i, ch) in rows[2].enumerated() {
+            let c = String(ch)
+            let key = KeyView(action: .input(FlickMap(center: c, left: nil, up: nil, right: nil, down: nil)))
+            key.titleLabel.text = c
+            key.tag = 1041 + i
+            view.addSubview(key); keys.append(key)
+        }
+
+        let bsKey = KeyView(action: .backspace)
+        bsKey.titleLabel.text = "⌫"; bsKey.isSpecial = true
+        bsKey.tag = 1048
+        view.addSubview(bsKey); keys.append(bsKey)
+
+        // Row 3: ☆123(1060) / かな or abc(1061) / space(1062) / 🌐(1063) / return(1064)
+        func makeCtrl(_ action: KeyAction, text: String, tag: Int, accent: Bool = false) {
+            let key = KeyView(action: action)
+            key.titleLabel.text = text
+            key.isSpecial = !accent; key.isAccent = accent
+            key.tag = tag
+            if case .globe = action {
+                key.isUserInteractionEnabled = true
+                key.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
+            } else {
+                key.isUserInteractionEnabled = true
+                key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+                key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+                key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
+            }
+            view.addSubview(key); keys.append(key)
+        }
+
+        makeCtrl(.mode123, text: "☆123", tag: 1060)
+        if isJapaneseLayout {
+            makeCtrl(.modeKana, text: "あいう", tag: 1061)
+        } else {
+            makeCtrl(.modeABC, text: "abc", tag: 1061)
+        }
+
+        let spaceKey = KeyView(action: .space)
+        spaceKey.titleLabel.text = "space"; spaceKey.isSpecial = true
+        spaceKey.tag = 1062
+        view.addSubview(spaceKey); keys.append(spaceKey)
+
+        makeCtrl(.globe, text: "🌐", tag: 1063)
+
+        let returnKey = KeyView(action: .newline)
+        returnKey.titleLabel.text = "return"; returnKey.isAccent = true
+        returnKey.tag = 1064
+        view.addSubview(returnKey); keys.append(returnKey)
+
+        applyTheme()
+        view.setNeedsLayout()
+    }
+
+    private func layoutQwertyKeys() {
+        let m: CGFloat = 5
+        let outerH: CGFloat = 4, outerV: CGFloat = 4
+        let totalW = view.bounds.width - outerH * 2
+        let totalH = view.bounds.height - outerV * 2
+        guard totalW > 0, totalH > 0 else { return }
+        let rowH = (totalH - m * 3) / 4
+
+        // Row 0 基準幅 (10キー + 9ギャップ = totalW)
+        let keyW = (totalW - m * 9) / 10
+        // Row 2: ⇧・⌫ は 1.5 倍幅 (10*keyW2 + 8*m = totalW より keyW2 ≈ keyW)
+        let wideW = keyW * 1.5
+
+        for key in keys {
+            let t = key.tag
+            guard t >= 1000 else { continue }
+            let row = (t - 1000) / 20
+            let col = (t - 1000) % 20
+            let y = outerV + CGFloat(row) * (rowH + m)
+            var x: CGFloat
+            var w: CGFloat = keyW
+
+            switch row {
+            case 0: // Q-P
+                x = outerH + CGFloat(col) * (keyW + m)
+            case 1: // A-L centered
+                let row1W = keyW * 9 + m * 8
+                let indent = (totalW - row1W) / 2
+                x = outerH + indent + CGFloat(col) * (keyW + m)
+            case 2: // ⇧ Z-M ⌫
+                if col == 0 {          // ⇧
+                    x = outerH; w = wideW
+                } else if col == 8 {   // ⌫
+                    x = outerH + totalW - wideW; w = wideW
+                } else {               // Z(1)…M(7)
+                    let midW = totalW - wideW * 2 - m * 2
+                    let midKeyW = (midW - m * 6) / 7
+                    x = outerH + wideW + m + CGFloat(col - 1) * (midKeyW + m)
+                    w = midKeyW
+                }
+            case 3: // ☆123 / かな(abc) / space / 🌐 / return
+                let unit = (totalW - m * 4) / 8   // 8等分単位
+                switch col {
+                case 0: x = outerH;                                   w = unit * 1.5
+                case 1: x = outerH + unit * 1.5 + m;                  w = unit * 1.5
+                case 2: x = outerH + unit * 3 + m * 2;               w = unit * 3
+                case 3: x = outerH + unit * 6 + m * 3;               w = unit * 1.0
+                case 4: x = outerH + unit * 7 + m * 4;               w = unit * 1.0
+                default: x = 0
+                }
+            default: x = 0
+            }
+
+            key.frame = CGRect(x: x, y: y, width: w, height: rowH)
+            let base = min(w, rowH)
+            switch key.action {
+            case .input:
+                key.titleLabel.font = palette.keyFont(size: base * 0.48, weight: .regular)
+            default:
+                key.titleLabel.font = palette.keyFont(size: base * 0.28, weight: .medium)
+            }
+        }
+    }
+
+    private func updateQwertyCase() {
+        for key in keys {
+            guard key.tag >= 1000, key.tag < 1040 else { continue }
+            if case .input(let map) = key.action {
+                key.titleLabel.text = isShifted ? map.center.uppercased() : map.center
+            }
+        }
+        if let shiftKey = keys.first(where: { if case .shift = $0.action { return true }; return false }) {
+            shiftKey.titleLabel.text = isShifted ? "⇪" : "⇧"
+        }
     }
 
     private func showThemeToast() {
