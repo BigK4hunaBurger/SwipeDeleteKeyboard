@@ -432,6 +432,7 @@ final class KeyboardViewController: UIInputViewController {
 
     // QWERTY シフト状態
     private var isShifted = false
+    private let textChecker = UITextChecker()
 
     // バックスペース状態
     private var bsRepeatTimer: Timer?
@@ -738,10 +739,21 @@ final class KeyboardViewController: UIInputViewController {
             candidates = []
         } else {
             textDocumentProxy.setMarkedText(s, selectedRange: NSRange(location: s.utf16.count, length: 0))
-            candidates = KanjiConverter.shared.candidates(for: s)
+            candidates = (mode == .qwerty) ? englishCandidates(for: s) : KanjiConverter.shared.candidates(for: s)
         }
         reloadCandidateBar()
         updateReturnKeyTitle()
+    }
+
+    /// UITextChecker を使って英語補完候補を生成する
+    private func englishCandidates(for text: String) -> [String] {
+        guard !text.isEmpty else { return [] }
+        let range = NSRange(location: 0, length: (text as NSString).length)
+        var results = textChecker.completions(forPartialWordRange: range, in: text, language: "en_US") ?? []
+        // 入力中の文字列を先頭に確保(そのまま確定しやすいように)
+        results.removeAll { $0.caseInsensitiveCompare(text) == .orderedSame }
+        results.insert(text, at: 0)
+        return Array(results.prefix(8))
     }
 
     /// 候補を選ばずに確定: 無変換のひらがなのまま文書に入れる
@@ -854,6 +866,10 @@ final class KeyboardViewController: UIInputViewController {
                 if mode == .kana, !composingText.isEmpty {
                     // 変換中の空白 = 無変換のまま確定(誤変換を防ぐ)
                     commitComposingRaw()
+                } else if mode == .qwerty, !composingText.isEmpty {
+                    // QWERTY composing 中はスペースで単語確定 + スペース挿入
+                    commitComposingRaw()
+                    insert(" ")
                 } else {
                     insert((mode == .abc || mode == .qwerty || !isJapaneseLayout) ? " " : "　")
                 }
@@ -953,6 +969,12 @@ final class KeyboardViewController: UIInputViewController {
     private func handleInput(_ s: String) {
         if mode == .kana, isComposable(s) {
             setComposing(composingText + s)
+            UIDevice.current.playInputClick()
+        } else if mode == .qwerty, s.count == 1, s.first?.isLetter == true {
+            // QWERTY 英字 → composing バッファに積んで予測候補を表示
+            let c = isShifted ? s.uppercased() : s
+            if isShifted { isShifted = false; updateQwertyCase() }
+            setComposing(composingText + c)
             UIDevice.current.playInputClick()
         } else {
             commitComposingRaw()
