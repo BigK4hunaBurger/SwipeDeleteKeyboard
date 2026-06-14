@@ -11,7 +11,7 @@ Wipe
 keyboard,delete,swipe,japanese,flick,kana,kanji,type,productivity,theme
 
 ## プライバシーポリシー URL
-https://BigK4hunaBurger.github.io/SwipeDeleteKeyboard/privacy.html
+https://bigk4hunaburger.github.io/SwipeDeleteKeyboard/privacy.html
 
 ---
 
