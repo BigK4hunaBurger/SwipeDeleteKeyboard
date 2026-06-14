@@ -543,6 +543,8 @@ final class KeyboardViewController: UIInputViewController {
 
     // QWERTY シフト状態
     private var isShifted = false
+    private var isCapsLocked = false
+    private var lastShiftTapTime: Date?
     private let textChecker = UITextChecker()
 
     // バックスペース状態
@@ -613,6 +615,8 @@ final class KeyboardViewController: UIInputViewController {
         keys.forEach { $0.removeFromSuperview() }
         keys.removeAll()
         isShifted = false
+        isCapsLocked = false
+        lastShiftTapTime = nil
 
         if isQwertyFamily {
             heightConstraint?.constant = 236 + topBarHeight
@@ -1077,7 +1081,18 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func shiftKeyTapped(_ sender: KeyView) {
         sender.alpha = 1.0
-        isShifted.toggle()
+        let now = Date()
+        let isDoubleTap = lastShiftTapTime.map { now.timeIntervalSince($0) < 0.4 } ?? false
+        lastShiftTapTime = now
+
+        if isCapsLocked {
+            isCapsLocked = false
+            isShifted = false
+        } else if isDoubleTap && isShifted {
+            isCapsLocked = true
+        } else {
+            isShifted.toggle()
+        }
         updateQwertyCase()
         UIDevice.current.playInputClick()
     }
@@ -1122,7 +1137,7 @@ final class KeyboardViewController: UIInputViewController {
         } else if mode == .qwerty, s.count == 1, s.first?.isLetter == true {
             // QWERTY 英字 → composing バッファに積んで予測候補を表示
             let c = isShifted ? s.uppercased() : s
-            if isShifted { isShifted = false; updateQwertyCase() }
+            if isShifted && !isCapsLocked { isShifted = false; updateQwertyCase() }
             setComposing(composingText + c)
             UIDevice.current.playInputClick()
         } else {
@@ -1130,8 +1145,7 @@ final class KeyboardViewController: UIInputViewController {
             let output: String
             if mode == .qwerty && isShifted {
                 output = s.uppercased()
-                isShifted = false
-                updateQwertyCase()
+                if !isCapsLocked { isShifted = false; updateQwertyCase() }
             } else {
                 output = s
             }
@@ -1540,13 +1554,14 @@ final class KeyboardViewController: UIInputViewController {
 
     private func updateQwertyCase() {
         for key in keys {
-            guard key.tag >= 1000, key.tag < 1040 else { continue }
             if case .input(let map) = key.action {
                 key.titleLabel.text = isShifted ? map.center.uppercased() : map.center
             }
         }
         if let shiftKey = keys.first(where: { if case .shift = $0.action { return true }; return false }) {
-            shiftKey.titleLabel.text = isShifted ? "⇪" : "⇧"
+            shiftKey.titleLabel.text = isCapsLocked ? "⇪" : (isShifted ? "⇧" : "⇧")
+            shiftKey.alpha = isCapsLocked ? 1.0 : (isShifted ? 0.85 : 1.0)
+            shiftKey.isAccent = isCapsLocked
         }
     }
 
