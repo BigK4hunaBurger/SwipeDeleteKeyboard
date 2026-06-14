@@ -809,14 +809,36 @@ final class KeyboardViewController: UIInputViewController {
     @objc private func candidateTapped(_ sender: UIButton) {
         guard sender.tag < candidates.count else { return }
         let s = candidates[sender.tag]
-        // insertTextはmarked text(composing表示)を置き換えて確定する
+
+        // この候補が composingText の何文字分に対応するかを探す
+        let consumed = consumedLength(for: s, in: composingText)
+        let remaining = String(composingText.dropFirst(consumed))
+
+        // insertText が marked text(composingText 全体)を s で確定する
         textDocumentProxy.insertText(s)
         undoStack.append(.inserted(s)); trimUndo()
-        composingText = ""
-        candidates = []
-        reloadCandidateBar()
-        updateReturnKeyTitle()
         UIDevice.current.playInputClick()
+
+        if remaining.isEmpty {
+            composingText = ""
+            candidates = []
+            reloadCandidateBar()
+            updateReturnKeyTitle()
+        } else {
+            // 残りのひらがなを composing に戻してそのまま変換を続けられるようにする
+            setComposing(remaining)
+        }
+    }
+
+    /// 候補 candidate を生成する composingText の最短プレフィックス長を返す
+    private func consumedLength(for candidate: String, in composing: String) -> Int {
+        for length in 1...composing.count {
+            let prefix = String(composing.prefix(length))
+            if KanjiConverter.shared.candidates(for: prefix).contains(candidate) {
+                return length
+            }
+        }
+        return composing.count
     }
 
     /// composing 文字列を更新し marked text と候補バーに反映する
