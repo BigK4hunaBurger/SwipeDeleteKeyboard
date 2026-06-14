@@ -126,28 +126,10 @@ jobs:
           echo "Export done:"
           ls -la $RUNNER_TEMP/export/
 
-      # App Store Connect API キーが設定済みなら自動アップロード
-      - name: Upload to App Store Connect
-        if: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT != '' }}
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" | base64 --decode > \
-            ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
-
-          IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
-          xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
-            --apiIssuer "${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" \
-            --verbose
-          echo "Upload complete — check App Store Connect / TestFlight"
-
-      # API キー未設定の場合は IPA を Actions Artifact として保存（手動 Transporter アップロード用）
+      # IPA を Artifact として保存 → Transporter で手動アップロード
       - name: Save IPA as artifact
-        if: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: Wipe-AppStore-IPA
           path: ${{ runner.temp }}/export/*.ipa
-          retention-days: 7
+          retention-days: 14
