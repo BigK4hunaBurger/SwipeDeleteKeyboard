@@ -25,7 +25,24 @@ jobs:
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          if [ -n "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN }}" ]; then
+            # 英語プロファイルが設定済み: プロファイルUUIDをproject.ymlに埋め込む
+            EN_UUID=$(echo "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+            sed -i '' "s/REPLACE_WITH_EN_PROFILE_UUID/${EN_UUID}/g" project.yml
+            echo "English keyboard profile UUID: $EN_UUID"
+          else
+            # 英語プロファイル未設定: EnglishKeyboardExtensionをビルド対象から除外
+            echo "ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN not set — building without EnglishKeyboardExtension"
+            python3 - << 'PYEOF'
+          import re
+          content = open('project.yml').read()
+          content = re.sub(r'\n      - target: EnglishKeyboardExtension', '', content)
+          content = re.sub(r'\n  EnglishKeyboardExtension:[\s\S]*', '\n', content)
+          open('project.yml', 'w').write(content)
+          PYEOF
+          fi
+          xcodegen generate
 
       - name: Install certificate and profiles
         run: |
@@ -56,13 +73,6 @@ jobs:
             echo "EN_PROFILE_UUID=$EN_UUID" >> $GITHUB_ENV
           fi
           ls ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Update English Extension Profile UUID
-        run: |
-          if [ -n "$EN_PROFILE_UUID" ]; then
-            sed -i '' "s/REPLACE_WITH_EN_PROFILE_UUID/${EN_PROFILE_UUID}/g" project.yml
-            xcodegen generate
-          fi
 
       - name: Archive
         run: |
