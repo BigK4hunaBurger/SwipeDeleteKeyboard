@@ -870,7 +870,7 @@ final class KeyboardViewController: UIInputViewController {
 
     /// 候補 candidate を生成する composingText の最短プレフィックス長を返す
     private func consumedLength(for candidate: String, in composing: String) -> Int {
-        for length in 1...composing.count {
+        for length in stride(from: composing.count, through: 1, by: -1) {
             let prefix = String(composing.prefix(length))
             if KanjiConverter.shared.candidates(for: prefix).contains(candidate) {
                 return length
