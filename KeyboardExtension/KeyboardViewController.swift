@@ -44,7 +44,7 @@ struct ThemePalette {
 }
 
 enum KeyboardTheme: String, CaseIterable {
-    case system, terminal, neon, sakura, midnight, paper, sunset
+    case system, terminal, neon, sakura, midnight, paper, sunset, wood, metal, ice
 
     static let storageKey = "kbTheme"
     static let suiteName  = "group.com.bigk4huna.swipedelete"
@@ -78,6 +78,9 @@ enum KeyboardTheme: String, CaseIterable {
         case .midnight: return "Midnight"
         case .paper:    return "Paper"
         case .sunset:   return "Sunset"
+        case .wood:     return "Wood"
+        case .metal:    return "Metal"
+        case .ice:      return "Ice"
         }
     }
 
@@ -118,13 +121,14 @@ enum KeyboardTheme: String, CaseIterable {
                                 popupHighlight: rgb(255, 70, 200),
                                 cornerRadius: 9, usesMonospaced: false, glowColor: rgb(0, 245, 255, 0.55))
         case .sakura:
-            return ThemePalette(background: rgb(252, 238, 242), keyBg: .white,
-                                keyText: rgb(90, 50, 65), specialBg: rgb(246, 210, 222),
-                                specialText: rgb(150, 70, 100),
-                                returnBg: rgb(232, 110, 150), returnText: .white,
-                                popupBg: .white, popupText: rgb(90, 50, 65),
-                                popupHighlight: rgb(232, 110, 150),
-                                cornerRadius: 12, usesMonospaced: false, glowColor: nil)
+            // ピュアピンク — グレー排除、キーもほんのりピンク
+            return ThemePalette(background: rgb(255, 233, 241), keyBg: rgb(255, 248, 252),
+                                keyText: rgb(105, 38, 68), specialBg: rgb(248, 208, 226),
+                                specialText: rgb(165, 72, 112),
+                                returnBg: rgb(218, 90, 138), returnText: .white,
+                                popupBg: rgb(255, 248, 252), popupText: rgb(105, 38, 68),
+                                popupHighlight: rgb(218, 90, 138),
+                                cornerRadius: 14, usesMonospaced: false, glowColor: nil)
         case .midnight:
             return ThemePalette(background: rgb(10, 16, 30), keyBg: rgb(24, 34, 56),
                                 keyText: rgb(190, 215, 250), specialBg: rgb(17, 25, 43),
@@ -149,6 +153,33 @@ enum KeyboardTheme: String, CaseIterable {
                                 popupBg: rgb(55, 30, 36), popupText: rgb(255, 215, 180),
                                 popupHighlight: rgb(255, 140, 80),
                                 cornerRadius: 9, usesMonospaced: false, glowColor: nil)
+        case .wood:
+            // ウォールナット材 — 深いこげ茶、琥珀アクセント
+            return ThemePalette(background: rgb(32, 20, 10), keyBg: rgb(56, 36, 20),
+                                keyText: rgb(218, 182, 128), specialBg: rgb(42, 26, 13),
+                                specialText: rgb(168, 130, 85),
+                                returnBg: rgb(158, 98, 36), returnText: rgb(255, 242, 205),
+                                popupBg: rgb(64, 42, 24), popupText: rgb(218, 182, 128),
+                                popupHighlight: rgb(190, 128, 56),
+                                cornerRadius: 3, usesMonospaced: false, glowColor: nil)
+        case .metal:
+            // ブラッシュドスチール — 暗いチャコール、シルバーアクセント
+            return ThemePalette(background: rgb(38, 40, 44), keyBg: rgb(64, 68, 75),
+                                keyText: rgb(215, 220, 228), specialBg: rgb(50, 53, 58),
+                                specialText: rgb(152, 160, 172),
+                                returnBg: rgb(86, 92, 104), returnText: rgb(238, 240, 245),
+                                popupBg: rgb(70, 74, 82), popupText: rgb(215, 220, 228),
+                                popupHighlight: rgb(140, 152, 172),
+                                cornerRadius: 5, usesMonospaced: false, glowColor: nil)
+        case .ice:
+            // フロスト — 澄んだ氷青、クリアで涼しい
+            return ThemePalette(background: rgb(225, 238, 252), keyBg: rgb(248, 252, 255),
+                                keyText: rgb(35, 58, 95), specialBg: rgb(205, 225, 248),
+                                specialText: rgb(68, 100, 145),
+                                returnBg: rgb(75, 138, 220), returnText: .white,
+                                popupBg: rgb(248, 252, 255), popupText: rgb(35, 58, 95),
+                                popupHighlight: rgb(88, 152, 228),
+                                cornerRadius: 12, usesMonospaced: false, glowColor: nil)
         }
     }
 }

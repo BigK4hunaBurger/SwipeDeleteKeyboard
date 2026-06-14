@@ -1,212 +1,260 @@
 import SwiftUI
 
-// キーボード拡張の KeyboardTheme と対応するテーマ定義
-enum KBTheme: String, CaseIterable, Identifiable {
-    case system, terminal, neon, sakura, midnight, paper, sunset
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .system:   return "System"
-        case .terminal: return "Terminal >_"
-        case .neon:     return "Neon ◈"
-        case .sakura:   return "Sakura ❀"
-        case .midnight: return "Midnight ☾"
-        case .paper:    return "Paper ▢"
-        case .sunset:   return "Sunset ◐"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .system:   return "標準 iOS スタイル(ライト/ダーク自動)"
-        case .terminal: return "黒背景・緑モノスペース・コマンドプロンプト風"
-        case .neon:     return "暗紫背景・シアン/マゼンタ・グロー"
-        case .sakura:   return "淡いピンク・丸キー・やわらかい印象"
-        case .midnight: return "深い紺・アイスブルー・落ち着いたダーク"
-        case .paper:    return "生成り×黒・直線的・ミニマル"
-        case .sunset:   return "ダークブラウン×オレンジ・あたたかいダーク"
-        }
-    }
-
-    var previewBg: Color {
-        switch self {
-        case .system:   return Color(UIColor.systemBackground)
-        case .terminal: return Color(red: 0.04, green: 0.05, blue: 0.04)
-        case .neon:     return Color(red: 0.06, green: 0.05, blue: 0.14)
-        case .sakura:   return Color(red: 0.99, green: 0.93, blue: 0.95)
-        case .midnight: return Color(red: 0.04, green: 0.06, blue: 0.12)
-        case .paper:    return Color(red: 0.96, green: 0.95, blue: 0.93)
-        case .sunset:   return Color(red: 0.14, green: 0.07, blue: 0.09)
-        }
-    }
-
-    var previewKey: Color {
-        switch self {
-        case .system:   return Color(UIColor.secondarySystemBackground)
-        case .terminal: return Color(red: 0.09, green: 0.11, blue: 0.09)
-        case .neon:     return Color(red: 0.12, green: 0.10, blue: 0.24)
-        case .sakura:   return .white
-        case .midnight: return Color(red: 0.09, green: 0.13, blue: 0.22)
-        case .paper:    return .white
-        case .sunset:   return Color(red: 0.24, green: 0.13, blue: 0.15)
-        }
-    }
-
-    var previewFg: Color {
-        switch self {
-        case .system:   return Color(UIColor.label)
-        case .terminal: return Color(red: 0.0, green: 0.9, blue: 0.27)
-        case .neon:     return Color(red: 0.0, green: 0.96, blue: 1.0)
-        case .sakura:   return Color(red: 0.35, green: 0.20, blue: 0.25)
-        case .midnight: return Color(red: 0.75, green: 0.84, blue: 0.98)
-        case .paper:    return Color(red: 0.12, green: 0.12, blue: 0.11)
-        case .sunset:   return Color(red: 1.0, green: 0.84, blue: 0.70)
-        }
-    }
-
-    var usesMonospaced: Bool { self == .terminal }
-}
-
 private let sharedUD = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
 
+// MARK: - Models
+
+enum AppLang: String, CaseIterable {
+    case ja = "JA", en = "EN"
+    static var detected: AppLang {
+        Locale.current.language.languageCode?.identifier == "ja" ? .ja : .en
+    }
+}
+
+enum KBTheme: String, CaseIterable, Identifiable {
+    case system, terminal, neon, sakura, midnight, paper, sunset, wood, metal, ice
+    var id: String { rawValue }
+
+    func name(_ lang: AppLang) -> String {
+        switch self {
+        case .system:   return lang == .ja ? "システム" : "System"
+        case .terminal: return "Terminal"
+        case .neon:     return "Neon"
+        case .sakura:   return lang == .ja ? "サクラ" : "Sakura"
+        case .midnight: return "Midnight"
+        case .paper:    return lang == .ja ? "ペーパー" : "Paper"
+        case .sunset:   return lang == .ja ? "サンセット" : "Sunset"
+        case .wood:     return lang == .ja ? "ウッド" : "Wood"
+        case .metal:    return "Metal"
+        case .ice:      return lang == .ja ? "アイス" : "Ice"
+        }
+    }
+
+    var accentColor: Color {
+        switch self {
+        case .system:   return Color(UIColor.label)
+        case .terminal: return Color(red: 0,    green: 0.90, blue: 0.27)
+        case .neon:     return Color(red: 1.00, green: 0.27, blue: 0.78)
+        case .sakura:   return Color(red: 0.85, green: 0.35, blue: 0.54)
+        case .midnight: return Color(red: 0.43, green: 0.67, blue: 1.00)
+        case .paper:    return Color(red: 0.16, green: 0.16, blue: 0.15)
+        case .sunset:   return Color(red: 0.94, green: 0.39, blue: 0.24)
+        case .wood:     return Color(red: 0.62, green: 0.38, blue: 0.14)
+        case .metal:    return Color(red: 0.54, green: 0.58, blue: 0.64)
+        case .ice:      return Color(red: 0.29, green: 0.54, blue: 0.86)
+        }
+    }
+}
+
+// MARK: - ContentView
+
 struct ContentView: View {
+    @State private var lang: AppLang = .detected
     @State private var selectedTheme: KBTheme = {
         KBTheme(rawValue: sharedUD.string(forKey: "kbTheme") ?? "") ?? .system
     }()
     @State private var japaneseLayout: Bool = {
         if let v = sharedUD.object(forKey: "kbLayoutJapanese") as? Bool { return v }
-        if let v = UserDefaults.standard.object(forKey: "kbLayoutJapanese") as? Bool { return v }
         return true
     }()
 
     var body: some View {
-        NavigationStack {
-            List {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 40) {
+                headerView
                 setupSection
-                usageSection
-                layoutSection
+                featuresSection
                 themeSection
+                settingsSection
+                Spacer(minLength: 40)
             }
-            .navigationTitle("SwipeDelete Keyboard")
+            .padding(24)
         }
     }
 
-    // MARK: - Sections
+    // MARK: Header
+
+    private var headerView: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Wipe")
+                    .font(.system(size: 48, weight: .black))
+                Text(lang == .ja
+                     ? "スライドで消せるキーボード"
+                     : "The keyboard that swipes to delete")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            langToggle
+        }
+    }
+
+    private var langToggle: some View {
+        HStack(spacing: 0) {
+            ForEach(AppLang.allCases, id: \.rawValue) { l in
+                Button(action: { lang = l }) {
+                    Text(l.rawValue)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(lang == l
+                            ? Color(UIColor.systemBackground)
+                            : .primary)
+                        .frame(width: 36, height: 30)
+                        .background(lang == l ? Color.primary : Color.clear)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary, lineWidth: 1.5))
+    }
+
+    // MARK: Setup
 
     private var setupSection: some View {
-        Section("キーボードの有効化") {
-            step(n: 1, text: "設定 → 一般 → キーボード → キーボードを追加")
-            step(n: 2, text: "「SwipeDelete Keyboard」を選んで追加")
-        }
-    }
-
-    private var usageSection: some View {
-        Section("使い方") {
-            Label("純正と同じフリック入力(上下左右で各文字)", systemImage: "arrow.up.and.down.and.arrow.left.and.right")
-            Label("⌫ を押したまま左へスライド → 削除範囲を選んで一括削除", systemImage: "hand.draw")
-            Label("⌫ 長押しで連続削除(だんだん加速)", systemImage: "delete.left")
-            Label("空白キーを左右にスライドでカーソル移動", systemImage: "cursorarrow.motionlines")
-            Label("小゛゜タップで 小文字 → 濁点 → 半濁点 を循環", systemImage: "textformat.alt")
-            Label("⤺ で直前の入力/削除を取り消し", systemImage: "arrow.uturn.backward")
-        }
-    }
-
-    private var layoutSection: some View {
-        Section {
-            Toggle(isOn: $japaneseLayout) {
-                Label("日本語フリック入力", systemImage: "character.ja")
+        section(title: lang == .ja ? "セットアップ" : "SETUP") {
+            VStack(alignment: .leading, spacing: 16) {
+                setupRow(1, lang == .ja
+                    ? "設定 → 一般 → キーボード → キーボードを追加"
+                    : "Settings → General → Keyboard → Add New Keyboard")
+                setupRow(2, lang == .ja
+                    ? "「Wipe Japanese」または「Wipe English」を選択"
+                    : "Select \"Wipe Japanese\" or \"Wipe English\"")
+                setupRow(3, lang == .ja
+                    ? "フルアクセスを許可"
+                    : "Tap \"Allow Full Access\"")
             }
+        }
+    }
+
+    private func setupRow(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text("\(n)")
+                .font(.system(size: 11, weight: .black))
+                .frame(width: 22, height: 22)
+                .background(Color.primary)
+                .foregroundColor(Color(UIColor.systemBackground))
+                .clipShape(Circle())
+            Text(text)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: Features
+
+    private var featuresSection: some View {
+        section(title: lang == .ja ? "使い方" : "HOW TO USE") {
+            VStack(alignment: .leading, spacing: 12) {
+                featureRow("⌫ + ←",
+                    lang == .ja ? "範囲を選んで一括削除" : "Swipe to select and batch-delete")
+                featureRow("⌫  長押し",
+                    lang == .ja ? "連続削除（だんだん加速）" : "Hold to delete continuously")
+                featureRow("space ←→",
+                    lang == .ja ? "カーソル移動" : "Slide to move cursor")
+                featureRow("⤺",
+                    lang == .ja ? "入力・削除を取り消し" : "Undo last input or deletion")
+                featureRow("小゛゜",
+                    lang == .ja ? "小文字／濁点／半濁点を循環" : "Cycle small / voiced / semi-voiced")
+                featureRow("◑",
+                    lang == .ja ? "テーマ変更パネルを開く" : "Open theme picker")
+            }
+        }
+    }
+
+    private func featureRow(_ key: String, _ desc: String) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            Text(key)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .frame(width: 94, alignment: .leading)
+            Text(desc)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: Theme
+
+    private var themeSection: some View {
+        section(title: lang == .ja ? "テーマ" : "THEME") {
+            let cols = [GridItem(.flexible()), GridItem(.flexible())]
+            LazyVGrid(columns: cols, spacing: 8) {
+                ForEach(KBTheme.allCases) { theme in
+                    Button(action: {
+                        selectedTheme = theme
+                        sharedUD.set(theme.rawValue, forKey: "kbTheme")
+                    }) {
+                        HStack(spacing: 9) {
+                            Circle()
+                                .fill(theme.accentColor)
+                                .frame(width: 9, height: 9)
+                            Text(theme.name(lang))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.primary)
+                            Spacer()
+                            if selectedTheme == theme {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 9)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7)
+                                .stroke(
+                                    selectedTheme == theme
+                                        ? Color.primary
+                                        : Color(UIColor.separator),
+                                    lineWidth: selectedTheme == theme ? 1.5 : 0.5
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    // MARK: Settings
+
+    private var settingsSection: some View {
+        section(title: lang == .ja ? "設定" : "SETTINGS") {
+            Toggle(isOn: $japaneseLayout) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(lang == .ja ? "日本語フリック入力" : "Japanese Flick Input")
+                        .font(.body)
+                    Text(lang == .ja
+                         ? "Wipe Japanese でかな・漢字変換を使用する"
+                         : "Enable kana/kanji input in Wipe Japanese")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .tint(.primary)
             .onChange(of: japaneseLayout) { newValue in
                 sharedUD.set(newValue, forKey: "kbLayoutJapanese")
                 UserDefaults.standard.set(newValue, forKey: "kbLayoutJapanese")
             }
-        } header: {
-            Text("言語")
-        } footer: {
-            Text(japaneseLayout
-                 ? "かな入力・漢字変換・候補バーが有効になります。"
-                 : "英数字のみの12キー配列になります。")
-                .font(.caption)
         }
     }
 
-    private var themeSection: some View {
-        Section {
-            ForEach(KBTheme.allCases) { theme in
-                ThemeRow(theme: theme, isSelected: selectedTheme == theme) {
-                    selectedTheme = theme
-                    sharedUD.set(theme.rawValue, forKey: "kbTheme")
-                }
+    // MARK: Section helper
+
+    @ViewBuilder
+    private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                Text(title)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .kerning(1.5)
+                Rectangle()
+                    .fill(Color(UIColor.separator))
+                    .frame(height: 0.5)
             }
-        } header: {
-            Text("テーマ")
-        } footer: {
-            Text("変更は次回キーボードを開いた時に反映されます。キーボード上の ⤺ キーを長押しすると、その場でもテーマを順番に切り替えられます。")
-                .font(.caption)
+            content()
         }
-    }
-
-    // MARK: - Helpers
-
-    private func step(n: Int, text: String) -> some View {
-        Label(text, systemImage: "\(n).circle.fill")
-    }
-}
-
-struct ThemeRow: View {
-    let theme: KBTheme
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 14) {
-                // ミニキーボードのプレビュー
-                ZStack {
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(theme.previewBg)
-                    HStack(spacing: 3) {
-                        ForEach(["あ", "か", "さ"], id: \.self) { ch in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(theme.previewKey)
-                                .frame(width: 14, height: 18)
-                                .overlay(
-                                    Text(ch)
-                                        .font(theme.usesMonospaced
-                                              ? .system(size: 9, weight: .semibold, design: .monospaced)
-                                              : .system(size: 9, weight: .semibold))
-                                        .foregroundColor(theme.previewFg)
-                                )
-                        }
-                    }
-                }
-                .frame(width: 64, height: 36)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7)
-                        .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(theme.displayName)
-                        .font(.body)
-                        .foregroundColor(Color(UIColor.label))
-                    Text(theme.subtitle)
-                        .font(.caption)
-                        .foregroundColor(Color(UIColor.secondaryLabel))
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.accentColor)
-                        .fontWeight(.semibold)
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }
 
