@@ -24,7 +24,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "64"
+        CURRENT_PROJECT_VERSION: "65"
         INFOPLIST_KEY_CFBundleDisplayName: Wipe
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -48,7 +48,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "64"
+        CURRENT_PROJECT_VERSION: "65"
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "iPhone Distribution"
         DEVELOPMENT_TEAM: M4MTXQ56CT
@@ -57,7 +57,7 @@ targets:
     info:
       path: KeyboardExtension/Info.plist
       properties:
-        CFBundleDisplayName: Wipe Keyboard
+        CFBundleDisplayName: Wipe Japanese
         NSExtension:
           NSExtensionAttributes:
             IsASCIICapable: false
@@ -84,7 +84,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "64"
+        CURRENT_PROJECT_VERSION: "65"
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "iPhone Distribution"
         DEVELOPMENT_TEAM: M4MTXQ56CT
