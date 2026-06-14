@@ -695,7 +695,7 @@ final class KeyboardViewController: UIInputViewController {
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
             key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .globe:
-            key.titleLabel.text = "🎨"; key.isSpecial = true
+            key.titleLabel.text = "◑"; key.isSpecial = true
             key.isUserInteractionEnabled = true
             key.addTarget(self, action: #selector(themeButtonTapped(_:)), for: .touchUpInside)
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
@@ -1341,7 +1341,10 @@ final class KeyboardViewController: UIInputViewController {
         spaceKey.tag = 1062
         view.addSubview(spaceKey); keys.append(spaceKey)
 
-        makeCtrl(.globe, text: "🎨", tag: 1063)
+        let periodKey = KeyView(action: .input(FlickMap(center: ".", left: nil, up: nil, right: nil, down: nil)))
+        periodKey.titleLabel.text = "."
+        periodKey.tag = 1063
+        view.addSubview(periodKey); keys.append(periodKey)
 
         let returnKey = KeyView(action: .newline)
         returnKey.titleLabel.text = "return"; returnKey.isAccent = true
