@@ -528,7 +528,7 @@ final class KeyboardViewController: UIInputViewController {
 
     // かな漢字変換
     private var composingText = ""
-    private var candidates: [String] = []
+    private var candidates: [(text: String, rubyCount: Int)] = []
     private let candidateBar = UIScrollView()
     private let candidateStack = UIStackView()
     private var topBarHeight: CGFloat { (isJapaneseLayout && mode == .kana) || mode == .qwerty ? 42 : 0 }
@@ -830,7 +830,7 @@ final class KeyboardViewController: UIInputViewController {
         let p = palette
         for (i, cand) in candidates.enumerated() {
             let b = UIButton(type: .custom)
-            b.setTitle(cand, for: .normal)
+            b.setTitle(cand.text, for: .normal)
             b.setTitleColor(p.popupText, for: .normal)
             b.titleLabel?.font = p.keyFont(size: 16, weight: .medium)
             b.backgroundColor = p.popupBg
@@ -850,10 +850,11 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func candidateTapped(_ sender: UIButton) {
         guard sender.tag < candidates.count else { return }
-        let s = candidates[sender.tag]
+        let cand = candidates[sender.tag]
+        let s = cand.text
 
-        // この候補が composingText の何文字分に対応するかを探す
-        let consumed = consumedLength(for: s, in: composingText)
+        // rubyCount = AzooKeyが返す「この候補が消費するひらがな文字数」
+        let consumed = min(cand.rubyCount, composingText.count)
         let remaining = String(composingText.dropFirst(consumed))
 
         // insertText が marked text(composingText 全体)を s で確定する
@@ -872,17 +873,6 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    /// 候補 candidate を生成する composingText の最短プレフィックス長を返す
-    private func consumedLength(for candidate: String, in composing: String) -> Int {
-        for length in stride(from: composing.count, through: 1, by: -1) {
-            let prefix = String(composing.prefix(length))
-            if KanjiConverter.shared.candidates(for: prefix).contains(candidate) {
-                return length
-            }
-        }
-        return composing.count
-    }
-
     /// composing 文字列を更新し marked text と候補バーに反映する
     private func setComposing(_ s: String) {
         composingText = s
@@ -893,7 +883,11 @@ final class KeyboardViewController: UIInputViewController {
             candidates = []
         } else {
             textDocumentProxy.setMarkedText(s, selectedRange: NSRange(location: s.utf16.count, length: 0))
-            candidates = (mode == .qwerty) ? englishCandidates(for: s) : KanjiConverter.shared.candidates(for: s)
+            if mode == .qwerty {
+                candidates = englishCandidates(for: s).map { (text: $0, rubyCount: s.count) }
+            } else {
+                candidates = KanjiConverter.shared.candidates(for: s)
+            }
         }
         reloadCandidateBar()
         updateReturnKeyTitle()

@@ -13,7 +13,7 @@ final class KanjiConverter {
 
     private init() {}
 
-    func candidates(for hiragana: String, n: Int = 12) -> [String] {
+    func candidates(for hiragana: String, n: Int = 12) -> [(text: String, rubyCount: Int)] {
         guard !hiragana.isEmpty else { return [] }
         var composing = ComposingText()
         composing.insertAtCursorPosition(hiragana, inputStyle: .direct)
@@ -29,8 +29,10 @@ final class KanjiConverter {
             metadata: nil
         )
         let result = converter.requestCandidates(composing, options: options)
-        var list = result.mainResults.map { $0.text }
-        if !list.contains(hiragana) { list.append(hiragana) }
+        var list = result.mainResults.map { (text: $0.text, rubyCount: $0.rubyCount) }
+        if !list.contains(where: { $0.text == hiragana }) {
+            list.append((text: hiragana, rubyCount: hiragana.count))
+        }
         return list
     }
 }
