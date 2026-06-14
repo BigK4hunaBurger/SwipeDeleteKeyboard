@@ -1,7 +1,5 @@
 import SwiftUI
 
-private let sharedUD = UserDefaults(suiteName: "group.com.bigk4huna.swipedelete") ?? .standard
-
 // MARK: - Models
 
 enum AppLang: String, CaseIterable {
@@ -15,18 +13,18 @@ enum KBTheme: String, CaseIterable, Identifiable {
     case system, terminal, neon, sakura, midnight, paper, sunset, wood, metal, ice
     var id: String { rawValue }
 
-    func name(_ lang: AppLang) -> String {
+    var displayName: String {
         switch self {
-        case .system:   return lang == .ja ? "システム" : "System"
+        case .system:   return "System"
         case .terminal: return "Terminal"
         case .neon:     return "Neon"
-        case .sakura:   return lang == .ja ? "サクラ" : "Sakura"
+        case .sakura:   return "Sakura"
         case .midnight: return "Midnight"
-        case .paper:    return lang == .ja ? "ペーパー" : "Paper"
-        case .sunset:   return lang == .ja ? "サンセット" : "Sunset"
-        case .wood:     return lang == .ja ? "ウッド" : "Wood"
+        case .paper:    return "Paper"
+        case .sunset:   return "Sunset"
+        case .wood:     return "Wood"
         case .metal:    return "Metal"
-        case .ice:      return lang == .ja ? "アイス" : "Ice"
+        case .ice:      return "Ice"
         }
     }
 
@@ -50,13 +48,6 @@ enum KBTheme: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
     @State private var lang: AppLang = .detected
-    @State private var selectedTheme: KBTheme = {
-        KBTheme(rawValue: sharedUD.string(forKey: "kbTheme") ?? "") ?? .system
-    }()
-    @State private var japaneseLayout: Bool = {
-        if let v = sharedUD.object(forKey: "kbLayoutJapanese") as? Bool { return v }
-        return true
-    }()
 
     var body: some View {
         ScrollView {
@@ -65,7 +56,6 @@ struct ContentView: View {
                 setupSection
                 featuresSection
                 themeSection
-                settingsSection
                 Spacer(minLength: 40)
             }
             .padding(24)
@@ -156,7 +146,7 @@ struct ContentView: View {
                 featureRow("小゛゜",
                     lang == .ja ? "小文字／濁点／半濁点を循環" : "Cycle small / voiced / semi-voiced")
                 featureRow("◑",
-                    lang == .ja ? "テーマ変更パネルを開く" : "Open theme picker")
+                    lang == .ja ? "テーマをキーボード内で変更" : "Change theme inside the keyboard")
             }
         }
     }
@@ -176,65 +166,34 @@ struct ContentView: View {
     // MARK: Theme
 
     private var themeSection: some View {
-        section(title: lang == .ja ? "テーマ" : "THEME") {
-            let cols = [GridItem(.flexible()), GridItem(.flexible())]
-            LazyVGrid(columns: cols, spacing: 8) {
-                ForEach(KBTheme.allCases) { theme in
-                    Button(action: {
-                        selectedTheme = theme
-                        sharedUD.set(theme.rawValue, forKey: "kbTheme")
-                    }) {
+        section(title: "THEME") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(lang == .ja
+                     ? "キーボード内の ◑ ボタンからテーマを切り替えられます。"
+                     : "Tap ◑ inside the keyboard to cycle through themes.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                let cols = [GridItem(.flexible()), GridItem(.flexible())]
+                LazyVGrid(columns: cols, spacing: 8) {
+                    ForEach(KBTheme.allCases) { theme in
                         HStack(spacing: 9) {
                             Circle()
                                 .fill(theme.accentColor)
                                 .frame(width: 9, height: 9)
-                            Text(theme.name(lang))
+                            Text(theme.displayName)
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.primary)
                             Spacer()
-                            if selectedTheme == theme {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.primary)
-                            }
                         }
                         .padding(.horizontal, 11)
                         .padding(.vertical, 9)
                         .background(
                             RoundedRectangle(cornerRadius: 7)
-                                .stroke(
-                                    selectedTheme == theme
-                                        ? Color.primary
-                                        : Color(UIColor.separator),
-                                    lineWidth: selectedTheme == theme ? 1.5 : 0.5
-                                )
+                                .stroke(Color(UIColor.separator), lineWidth: 0.5)
                         )
                     }
-                    .buttonStyle(.plain)
                 }
-            }
-        }
-    }
-
-    // MARK: Settings
-
-    private var settingsSection: some View {
-        section(title: lang == .ja ? "設定" : "SETTINGS") {
-            Toggle(isOn: $japaneseLayout) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(lang == .ja ? "日本語フリック入力" : "Japanese Flick Input")
-                        .font(.body)
-                    Text(lang == .ja
-                         ? "Wipe Japanese でかな・漢字変換を使用する"
-                         : "Enable kana/kanji input in Wipe Japanese")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .tint(.primary)
-            .onChange(of: japaneseLayout) { newValue in
-                sharedUD.set(newValue, forKey: "kbLayoutJapanese")
-                UserDefaults.standard.set(newValue, forKey: "kbLayoutJapanese")
             }
         }
     }
