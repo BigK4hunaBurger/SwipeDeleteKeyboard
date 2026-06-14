@@ -1209,10 +1209,11 @@ final class KeyboardViewController: UIInputViewController {
         let lb = UILabel()
         lb.textAlignment = .center
         lb.font = palette.keyFont(size: 14, weight: .semibold)
-        lb.textColor = .white
-        lb.backgroundColor = UIColor.systemRed.withAlphaComponent(0.92)
+        lb.backgroundColor = palette.popupBg.withAlphaComponent(0.96)
         lb.layer.cornerRadius = 10
         lb.layer.masksToBounds = true
+        lb.layer.borderWidth = 1.5
+        lb.layer.borderColor = UIColor.systemRed.cgColor
         view.addSubview(lb)
         bsPreviewLabel = lb
         updateDeletePreview()
@@ -1221,20 +1222,36 @@ final class KeyboardViewController: UIInputViewController {
     private func updateDeletePreview() {
         guard let lb = bsPreviewLabel else { return }
         if bsRangeCount == 0 {
-            lb.text = "◀ スライドで削除"
+            lb.attributedText = NSAttributedString(
+                string: "◀ スライドで削除",
+                attributes: [.foregroundColor: palette.popupText]
+            )
         } else {
             let before = textDocumentProxy.documentContextBeforeInput ?? ""
             let deleting = String(before.suffix(bsRangeCount))
             let remaining = String(before.dropLast(bsRangeCount))
 
-            // 残る部分（末尾）＋ カーソル位置 ＋ 削除部分（先頭から、末尾を省略）
             var contextPart = remaining
             if contextPart.count > 8 { contextPart = "…" + String(contextPart.suffix(7)) }
-
             var deletePart = deleting
             if deletePart.count > 14 { deletePart = String(deletePart.prefix(13)) + "…" }
 
-            lb.text = contextPart.isEmpty ? deletePart : "\(contextPart)|\(deletePart)"
+            let attr = NSMutableAttributedString()
+            if !contextPart.isEmpty {
+                attr.append(NSAttributedString(
+                    string: contextPart,
+                    attributes: [.foregroundColor: palette.popupText]
+                ))
+            }
+            // 削除される部分: 赤背景 + 白文字
+            attr.append(NSAttributedString(
+                string: deletePart,
+                attributes: [
+                    .foregroundColor: UIColor.white,
+                    .backgroundColor: UIColor.systemRed
+                ]
+            ))
+            lb.attributedText = attr
         }
         lb.sizeToFit()
         let w = lb.bounds.width + 24
