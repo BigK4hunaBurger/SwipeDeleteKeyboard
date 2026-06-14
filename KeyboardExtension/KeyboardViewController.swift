@@ -1195,9 +1195,17 @@ final class KeyboardViewController: UIInputViewController {
             lb.text = "◀ スライドで削除"
         } else {
             let before = textDocumentProxy.documentContextBeforeInput ?? ""
-            var snippet = String(before.suffix(bsRangeCount))
-            if snippet.count > 12 { snippet = "…" + snippet.suffix(11) }
-            lb.text = snippet
+            let deleting = String(before.suffix(bsRangeCount))
+            let remaining = String(before.dropLast(bsRangeCount))
+
+            // 残る部分（末尾）＋ カーソル位置 ＋ 削除部分（先頭から、末尾を省略）
+            var contextPart = remaining
+            if contextPart.count > 8 { contextPart = "…" + String(contextPart.suffix(7)) }
+
+            var deletePart = deleting
+            if deletePart.count > 14 { deletePart = String(deletePart.prefix(13)) + "…" }
+
+            lb.text = contextPart.isEmpty ? deletePart : "\(contextPart)|\(deletePart)"
         }
         lb.sizeToFit()
         let w = lb.bounds.width + 24
