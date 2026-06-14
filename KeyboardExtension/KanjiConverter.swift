@@ -29,7 +29,7 @@ final class KanjiConverter {
             metadata: nil
         )
         let result = converter.requestCandidates(composing, options: options)
-        var list = result.mainResults.map { (text: $0.text, rubyCount: $0.rubyCount) }
+        var list = result.mainResults.map { (text: $0.text, rubyCount: $0.correspondingCount) }
         if !list.contains(where: { $0.text == hiragana }) {
             list.append((text: hiragana, rubyCount: hiragana.count))
         }
