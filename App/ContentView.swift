@@ -48,42 +48,76 @@ enum KBTheme: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
     @State private var lang: AppLang = .detected
+    @State private var appeared = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 40) {
-                headerView
-                setupSection
-                featuresSection
-                themeSection
-                Spacer(minLength: 40)
-            }
-            .padding(24)
-        }
-    }
+        ZStack(alignment: .topTrailing) {
+            Color(UIColor.systemBackground)
+                .ignoresSafeArea()
 
-    // MARK: Header
+            ScrollView {
+                VStack(alignment: .leading, spacing: 40) {
+                    // タイトル
+                    titleBlock
+                        .animatedEntrance(appeared: appeared, delay: 0)
 
-    private var headerView: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Wipe")
-                    .font(.system(size: 48, weight: .black))
-                Text(lang == .ja
-                     ? "スライドで消せるキーボード"
-                     : "The keyboard that swipes to delete")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    // セットアップ
+                    sectionBlock(title: lang == .ja ? "セットアップ" : "SETUP") {
+                        setupContent
+                    }
+                    .animatedEntrance(appeared: appeared, delay: 0.12)
+
+                    // 使い方
+                    sectionBlock(title: lang == .ja ? "使い方" : "HOW TO USE") {
+                        featuresContent
+                    }
+                    .animatedEntrance(appeared: appeared, delay: 0.22)
+
+                    // テーマ
+                    sectionBlock(title: "THEME") {
+                        themeContent
+                    }
+                    .animatedEntrance(appeared: appeared, delay: 0.32)
+
+                    Spacer(minLength: 40)
+                }
+                .padding(24)
             }
-            Spacer()
+
+            // 言語切り替え（右上に固定）
             langToggle
+                .padding(.top, 56)
+                .padding(.trailing, 24)
+                .animatedEntrance(appeared: appeared, delay: 0.05)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) {
+                appeared = true
+            }
         }
     }
+
+    // MARK: Title
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Wipe")
+                .font(.system(size: 52, weight: .black))
+            Text(lang == .ja
+                 ? "スライドで消せるキーボード"
+                 : "The keyboard that swipes to delete")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .padding(.top, 8)
+    }
+
+    // MARK: Lang toggle
 
     private var langToggle: some View {
         HStack(spacing: 0) {
             ForEach(AppLang.allCases, id: \.rawValue) { l in
-                Button(action: { lang = l }) {
+                Button(action: { withAnimation(.easeOut(duration: 0.15)) { lang = l } }) {
                     Text(l.rawValue)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(lang == l
@@ -100,19 +134,17 @@ struct ContentView: View {
 
     // MARK: Setup
 
-    private var setupSection: some View {
-        section(title: lang == .ja ? "セットアップ" : "SETUP") {
-            VStack(alignment: .leading, spacing: 16) {
-                setupRow(1, lang == .ja
-                    ? "設定 → 一般 → キーボード → キーボードを追加"
-                    : "Settings → General → Keyboard → Add New Keyboard")
-                setupRow(2, lang == .ja
-                    ? "「Wipe Japanese」または「Wipe English」を選択"
-                    : "Select \"Wipe Japanese\" or \"Wipe English\"")
-                setupRow(3, lang == .ja
-                    ? "フルアクセスを許可"
-                    : "Tap \"Allow Full Access\"")
-            }
+    private var setupContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            setupRow(1, lang == .ja
+                ? "設定 → 一般 → キーボード → キーボードを追加"
+                : "Settings → General → Keyboard → Add New Keyboard")
+            setupRow(2, lang == .ja
+                ? "「Wipe Japanese」または「Wipe English」を選択"
+                : "Select \"Wipe Japanese\" or \"Wipe English\"")
+            setupRow(3, lang == .ja
+                ? "フルアクセスを許可"
+                : "Tap \"Allow Full Access\"")
         }
     }
 
@@ -132,22 +164,14 @@ struct ContentView: View {
 
     // MARK: Features
 
-    private var featuresSection: some View {
-        section(title: lang == .ja ? "使い方" : "HOW TO USE") {
-            VStack(alignment: .leading, spacing: 12) {
-                featureRow("⌫ + ←",
-                    lang == .ja ? "範囲を選んで一括削除" : "Swipe to select and batch-delete")
-                featureRow("⌫  長押し",
-                    lang == .ja ? "連続削除（だんだん加速）" : "Hold to delete continuously")
-                featureRow("space ←→",
-                    lang == .ja ? "カーソル移動" : "Slide to move cursor")
-                featureRow("⤺",
-                    lang == .ja ? "入力・削除を取り消し" : "Undo last input or deletion")
-                featureRow("小゛゜",
-                    lang == .ja ? "小文字／濁点／半濁点を循環" : "Cycle small / voiced / semi-voiced")
-                featureRow("◑",
-                    lang == .ja ? "テーマをキーボード内で変更" : "Change theme inside the keyboard")
-            }
+    private var featuresContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            featureRow("⌫ + ←",    lang == .ja ? "範囲を選んで一括削除"       : "Swipe to select and batch-delete")
+            featureRow("⌫  長押し", lang == .ja ? "連続削除（だんだん加速）"   : "Hold to delete continuously")
+            featureRow("space ←→", lang == .ja ? "カーソル移動"               : "Slide to move cursor")
+            featureRow("⤺",        lang == .ja ? "入力・削除を取り消し"        : "Undo last input or deletion")
+            featureRow("小゛゜",    lang == .ja ? "小文字／濁点／半濁点を循環" : "Cycle small / voiced / semi-voiced")
+            featureRow("◑",        lang == .ja ? "テーマをキーボード内で変更"  : "Change theme inside the keyboard")
         }
     }
 
@@ -165,34 +189,32 @@ struct ContentView: View {
 
     // MARK: Theme
 
-    private var themeSection: some View {
-        section(title: "THEME") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(lang == .ja
-                     ? "キーボード内の ◑ ボタンからテーマを切り替えられます。"
-                     : "Tap ◑ inside the keyboard to cycle through themes.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+    private var themeContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(lang == .ja
+                 ? "キーボード内の ◑ ボタンからテーマを切り替えられます。"
+                 : "Tap ◑ inside the keyboard to cycle through themes.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
 
-                let cols = [GridItem(.flexible()), GridItem(.flexible())]
-                LazyVGrid(columns: cols, spacing: 8) {
-                    ForEach(KBTheme.allCases) { theme in
-                        HStack(spacing: 9) {
-                            Circle()
-                                .fill(theme.accentColor)
-                                .frame(width: 9, height: 9)
-                            Text(theme.displayName)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.primary)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 9)
-                        .background(
-                            RoundedRectangle(cornerRadius: 7)
-                                .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                        )
+            let cols = [GridItem(.flexible()), GridItem(.flexible())]
+            LazyVGrid(columns: cols, spacing: 8) {
+                ForEach(KBTheme.allCases) { theme in
+                    HStack(spacing: 9) {
+                        Circle()
+                            .fill(theme.accentColor)
+                            .frame(width: 9, height: 9)
+                        Text(theme.displayName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.primary)
+                        Spacer()
                     }
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 9)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(Color(UIColor.separator), lineWidth: 0.5)
+                    )
                 }
             }
         }
@@ -201,7 +223,7 @@ struct ContentView: View {
     // MARK: Section helper
 
     @ViewBuilder
-    private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func sectionBlock<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 10) {
                 Text(title)
@@ -214,6 +236,17 @@ struct ContentView: View {
             }
             content()
         }
+    }
+}
+
+// MARK: - Animation helper
+
+private extension View {
+    func animatedEntrance(appeared: Bool, delay: Double) -> some View {
+        self
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 18)
+            .animation(.easeOut(duration: 0.5).delay(delay), value: appeared)
     }
 }
 
