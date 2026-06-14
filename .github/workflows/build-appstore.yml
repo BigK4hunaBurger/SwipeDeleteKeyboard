@@ -1,0 +1,153 @@
+name: Build & Upload App Store IPA
+
+on:
+  workflow_dispatch:   # 手動実行のみ（リリース時に回す）
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          XCODE=$(ls /Applications | grep "Xcode" | sort -V | tail -1)
+          echo "Using: $XCODE"
+          sudo xcode-select -s /Applications/$XCODE/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # project.yml の Ad Hoc UUID / 名称を App Store 用に書き換え
+      - name: Generate Xcode project (App Store)
+        run: |
+          APP_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+          KB_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+          echo "App Store App UUID: $APP_UUID"
+          echo "App Store Keyboard UUID: $KB_UUID"
+
+          sed -i '' "s/e5ceffe8-35f4-45cc-8ba2-3c1b65022f93/${APP_UUID}/g" project.yml
+          sed -i '' "s/SwipeDeleteKeyboard AdHoc/Wipe App Store/g" project.yml
+          sed -i '' "s/dc4ea33f-dae7-422a-b485-615e51821c9d/${KB_UUID}/g" project.yml
+          sed -i '' "s/SwipeDeleteKeyboard Keyboard AdHoc/Wipe Keyboard App Store/g" project.yml
+
+          if [ -n "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN }}" ]; then
+            EN_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+            sed -i '' "s/REPLACE_WITH_EN_PROFILE_UUID/${EN_UUID}/g" project.yml
+            sed -i '' "s/SwipeDeleteKeyboard English Keyboard AdHoc/Wipe English Keyboard App Store/g" project.yml
+            echo "English keyboard profile UUID: $EN_UUID"
+          else
+            echo "APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN not set — building without EnglishKeyboardExtension"
+            python3 - << 'PYEOF'
+          import re
+          content = open('project.yml').read()
+          content = re.sub(r'\n      - target: EnglishKeyboardExtension', '', content)
+          content = re.sub(r'\n  EnglishKeyboardExtension:[\s\S]*', '\n', content)
+          open('project.yml', 'w').write(content)
+          PYEOF
+          fi
+
+          xcodegen generate
+
+      - name: Install certificate and profiles
+        run: |
+          security create-keychain -p "temp" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "temp" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+          echo "${{ secrets.DISTRIBUTION_P12 }}" | base64 --decode > certificate.p12
+          security import certificate.p12 \
+            -k build.keychain \
+            -P "${{ secrets.DISTRIBUTION_P12_PASSWORD }}" \
+            -T /usr/bin/codesign
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "temp" build.keychain
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+
+          APP_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+          KB_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+
+          echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/${APP_UUID}.mobileprovision
+          echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/${KB_UUID}.mobileprovision
+
+          if [ -n "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN }}" ]; then
+            EN_UUID=$(echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+            echo "${{ secrets.APPSTORE_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode > \
+              ~/Library/MobileDevice/Provisioning\ Profiles/${EN_UUID}.mobileprovision
+          fi
+
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project SwipeDeleteKeyboard.xcodeproj \
+            -scheme SwipeDeleteKeyboard \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath $RUNNER_TEMP/Wipe.xcarchive
+          echo "Archive done"
+
+      - name: Export IPA (App Store)
+        run: |
+          cat > /tmp/exportOptions.plist << 'PLISTEOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.bigk4huna.swipedelete</key>
+              <string>Wipe App Store</string>
+              <key>com.bigk4huna.swipedelete.keyboard</key>
+              <string>Wipe Keyboard App Store</string>
+              <key>com.bigk4huna.swipedelete.keyboard.en</key>
+              <string>Wipe English Keyboard App Store</string>
+            </dict>
+          </dict>
+          </plist>
+          PLISTEOF
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/Wipe.xcarchive \
+            -exportPath $RUNNER_TEMP/export \
+            -exportOptionsPlist /tmp/exportOptions.plist
+          echo "Export done:"
+          ls -la $RUNNER_TEMP/export/
+
+      # App Store Connect API キーが設定済みなら自動アップロード
+      - name: Upload to App Store Connect
+        if: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT != '' }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" | base64 --decode > \
+            ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
+
+          IPA_PATH=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" \
+            --verbose
+          echo "Upload complete — check App Store Connect / TestFlight"
+
+      # API キー未設定の場合は IPA を Actions Artifact として保存（手動 Transporter アップロード用）
+      - name: Save IPA as artifact
+        if: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wipe-AppStore-IPA
+          path: ${{ runner.temp }}/export/*.ipa
+          retention-days: 7
