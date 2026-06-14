@@ -48,7 +48,21 @@ jobs:
             ~/Library/MobileDevice/Provisioning\ Profiles/e5ceffe8-35f4-45cc-8ba2-3c1b65022f93.mobileprovision
           echo "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD }}" | base64 --decode > \
             ~/Library/MobileDevice/Provisioning\ Profiles/dc4ea33f-dae7-422a-b485-615e51821c9d.mobileprovision
+          # 英語キーボード用プロビジョニングプロファイル（セットアップ後に有効になる）
+          if [ -n "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN }}" ]; then
+            EN_UUID=$(echo "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode | grep -a -o '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}' | head -1)
+            echo "${{ secrets.ADHOC_PROVISIONING_PROFILE_KEYBOARD_EN }}" | base64 --decode > \
+              ~/Library/MobileDevice/Provisioning\ Profiles/${EN_UUID}.mobileprovision
+            echo "EN_PROFILE_UUID=$EN_UUID" >> $GITHUB_ENV
+          fi
           ls ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Update English Extension Profile UUID
+        run: |
+          if [ -n "$EN_PROFILE_UUID" ]; then
+            sed -i '' "s/REPLACE_WITH_EN_PROFILE_UUID/${EN_PROFILE_UUID}/g" project.yml
+            xcodegen generate
+          fi
 
       - name: Archive
         run: |
@@ -77,6 +91,8 @@ jobs:
               <string>SwipeDeleteKeyboard AdHoc</string>
               <key>com.bigk4huna.swipedelete.keyboard</key>
               <string>SwipeDeleteKeyboard Keyboard AdHoc</string>
+              <key>com.bigk4huna.swipedelete.keyboard.en</key>
+              <string>SwipeDeleteKeyboard English Keyboard AdHoc</string>
             </dict>
           </dict>
           </plist>

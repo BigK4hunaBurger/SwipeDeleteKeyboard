@@ -475,6 +475,9 @@ final class ThemePickerView: UIView {
 
 final class KeyboardViewController: UIInputViewController {
 
+    // English-only extensionはバンドルIDが .keyboard.en で終わる
+    private let isEnglishOnly: Bool = Bundle.main.bundleIdentifier?.hasSuffix(".keyboard.en") == true
+
     private var isJapaneseLayout = true
 
     private static func loadJapaneseLayout() -> Bool {
@@ -531,7 +534,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        isJapaneseLayout = Self.loadJapaneseLayout()
+        isJapaneseLayout = isEnglishOnly ? false : Self.loadJapaneseLayout()
         if !isJapaneseLayout { mode = .qwerty }
         setupCandidateBar()
         buildKeyboard()
@@ -539,11 +542,15 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let newLayout = Self.loadJapaneseLayout()
-        let layoutChanged = newLayout != isJapaneseLayout
-        if layoutChanged {
-            isJapaneseLayout = newLayout
-            mode = isJapaneseLayout ? .kana : .qwerty
+        // 英語専用Extensionはレイアウト設定を無視して常に英語固定
+        var layoutChanged = false
+        if !isEnglishOnly {
+            let newLayout = Self.loadJapaneseLayout()
+            layoutChanged = newLayout != isJapaneseLayout
+            if layoutChanged {
+                isJapaneseLayout = newLayout
+                mode = isJapaneseLayout ? .kana : .qwerty
+            }
         }
         if heightConstraint == nil {
             let h = NSLayoutConstraint(item: view!, attribute: .height, relatedBy: .equal,
