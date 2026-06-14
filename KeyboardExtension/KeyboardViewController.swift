@@ -703,6 +703,18 @@ final class KeyboardViewController: UIInputViewController {
             key.addTarget(self, action: #selector(themeButtonTapped(_:)), for: .touchUpInside)
             key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
             key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
+        case .modeQwertyNum:
+            key.titleLabel.text = "123"; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
+        case .modeQwertySym:
+            key.titleLabel.text = "#+="; key.isSpecial = true
+            key.isUserInteractionEnabled = true
+            key.addTarget(self, action: #selector(modeKeyTapped(_:)), for: .touchUpInside)
+            key.addTarget(self, action: #selector(modeKeyDown(_:)), for: .touchDown)
+            key.addTarget(self, action: #selector(modeKeyUp(_:)), for: [.touchUpOutside, .touchCancel])
         case .undo:
             key.titleLabel.text = "⤺"; key.isSpecial = true
         }
@@ -975,8 +987,10 @@ final class KeyboardViewController: UIInputViewController {
             } else {
                 performUndo()
             }
+        case .modeQwertyNum, .modeQwertySym:
+            break   // modeKeyTapped が処理
         case .globe:
-            break   // handleInputModeList が処理
+            break   // themeButtonTapped が処理
         }
     }
 
