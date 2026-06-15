@@ -563,6 +563,9 @@ final class KeyboardViewController: UIInputViewController {
     // 取り消しスタック
     private var undoStack: [EditOp] = []
 
+    // 外部クリア検知: 自分自身のproxy操作中はtextDidChangeを無視する
+    private var isApplyingChange = false
+
     // MARK: ライフサイクル
 
     override func viewDidLoad() {
@@ -607,6 +610,21 @@ final class KeyboardViewController: UIInputViewController {
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
         super.traitCollectionDidChange(previous)
         applyTheme()
+    }
+
+    override func textDidChange(_ textInput: UITextInput?) {
+        super.textDidChange(textInput)
+        // 自分自身のproxy操作は無視し、ホストアプリによる外部クリアのみ検知する
+        guard !isApplyingChange, !composingText.isEmpty else { return }
+        // ホストアプリが送信などでテキストをクリアした場合、composingTextをリセット
+        let before = textDocumentProxy.documentContextBeforeInput ?? ""
+        let after = textDocumentProxy.documentContextAfterInput ?? ""
+        if before.isEmpty && after.isEmpty {
+            composingText = ""
+            candidates = []
+            reloadCandidateBar()
+            updateReturnKeyTitle()
+        }
     }
 
     // MARK: 構築
@@ -858,7 +876,9 @@ final class KeyboardViewController: UIInputViewController {
         let remaining = String(composingText.dropFirst(consumed))
 
         // insertText が marked text(composingText 全体)を s で確定する
+        isApplyingChange = true
         textDocumentProxy.insertText(s)
+        isApplyingChange = false
         undoStack.append(.inserted(s)); trimUndo()
         UIDevice.current.playInputClick()
 
@@ -876,6 +896,8 @@ final class KeyboardViewController: UIInputViewController {
     /// composing 文字列を更新し marked text と候補バーに反映する
     private func setComposing(_ s: String) {
         composingText = s
+        isApplyingChange = true
+        defer { isApplyingChange = false }
         if s.isEmpty {
             // marked text を空に置き換えてから unmark = 未確定文字を捨てる
             textDocumentProxy.setMarkedText("", selectedRange: NSRange(location: 0, length: 0))
@@ -908,7 +930,9 @@ final class KeyboardViewController: UIInputViewController {
     private func commitComposingRaw() {
         guard !composingText.isEmpty else { return }
         let s = composingText
+        isApplyingChange = true
         textDocumentProxy.insertText(s)   // marked text を置き換えて確定
+        isApplyingChange = false
         undoStack.append(.inserted(s)); trimUndo()
         composingText = ""
         candidates = []
