@@ -617,7 +617,7 @@ final class KeyboardViewController: UIInputViewController {
         // 自分自身のproxy操作は無視し、ホストアプリによる外部クリアのみ検知する
         guard !isApplyingChange, !composingText.isEmpty else { return }
         // markedTextRangeがnilならホストがmarked textを外部から消した(送信等)
-        if textDocumentProxy.markedTextRange == nil {
+        if (textDocumentProxy as? UITextInput)?.markedTextRange == nil {
             composingText = ""
             candidates = []
             reloadCandidateBar()
