@@ -1,0 +1,170 @@
+================================================================
+Wipe — App Store Metadata
+================================================================
+
+================================================================
+【ENGLISH】
+================================================================
+
+APP NAME
+--------
+Wipe — Keyboard
+
+SUBTITLE (max 30 chars)
+-----------------------
+Delete smarter, type faster
+
+PROMOTIONAL TEXT (max 170 chars — updatable without resubmission)
+-----------------------------------------------------------------
+New: 10 themes, Japanese IME, and lightning-fast swipe deletion.
+Wipe makes every delete feel effortless.
+
+DESCRIPTION (max 4000 chars)
+-----------------------------
+Wipe is a custom iOS keyboard that makes deleting text fast, precise,
+and satisfying.
+
+【Swipe to Delete】
+Press and hold the backspace key, then slide left to select exactly
+how many characters you want to erase — all at once. No more tapping
+backspace twenty times.
+
+【Japanese Input (12-key Flick)】
+Full Japanese IME powered by AzooKey. Flick input for hiragana with
+real-time kanji conversion. Tap a candidate to insert it instantly.
+Remaining characters stay in the conversion bar for continued editing.
+
+【English QWERTY】
+Clean QWERTY layout with autocomplete suggestions. Double-tap Shift
+for Caps Lock. Single tap to shift, one letter — then back to
+lowercase automatically.
+
+【Smart Backspace】
+• Tap: delete one character
+• Hold: continuous deletion with acceleration
+• Hold + slide left: range selection delete
+• Backspace on selected text: clears the selection
+
+【Cursor Control】
+Slide left or right on the Space key to move the cursor one character
+at a time. No need to lift your finger and tap precisely.
+
+【Undo】
+Tap ⤺ to undo your last input or deletion, one step at a time.
+
+【10 Themes】
+System · Terminal · Neon · Sakura · Midnight · Paper · Sunset ·
+Wood · Metal · Ice
+Long-press ⤺ to cycle themes without leaving the keyboard.
+
+【Privacy First】
+Wipe does not collect or transmit any data. All processing happens
+entirely on your device.
+
+---
+
+To use Wipe: Settings → General → Keyboard → Keyboards → Add New
+Keyboard → Wipe
+
+KEYWORDS (max 100 chars)
+-------------------------
+keyboard,japanese,flick,delete,swipe,IME,kanji,input,custom,theme
+
+WHAT'S NEW (Build 74)
+----------------------
+• Fixed: composing text now clears correctly when you send a message
+  before confirming input
+• Fixed: Backspace now works on iOS text selections
+• Caps Lock via double-tap Shift
+• All 10 themes available
+
+================================================================
+【日本語】
+================================================================
+
+アプリ名
+--------
+Wipe — キーボード
+
+サブタイトル（30文字以内）
+--------------------------
+スマートな削除、快適な入力
+
+プロモーションテキスト（170文字以内 — 再審査なしで更新可）
+----------------------------------------------------------
+テーマ10種、日本語IME、スライド削除が新登場。
+Wipeは、削除をもっと気持ちよく。
+
+説明文（4000文字以内）
+----------------------
+Wipeは、テキスト削除を速く・正確に・気持ちよくするカスタムiOSキーボードです。
+
+【スライド削除】
+バックスペースキーを長押ししたまま左にスライドすると、削除したい文字数を
+範囲指定して一括削除できます。何度もバックスペースを叩く必要はもうありません。
+
+【日本語入力（12キーフリック）】
+AzooKeyを採用した高精度な日本語IMEを搭載。ひらがなのフリック入力と
+リアルタイム漢字変換に対応。候補をタップするだけで即確定。未変換の文字は
+変換バーに残り、続けて編集できます。
+
+【英語QWERTY】
+シンプルなQWERTYレイアウトに自動補完候補を表示。Shiftを2回素早く押すと
+Caps Lockが有効になります。1文字入力すると自動で小文字に戻ります。
+
+【スマートバックスペース】
+・タップ：1文字削除
+・長押し：加速付き連続削除
+・長押し＋左スライド：範囲選択削除
+・選択範囲へのバックスペース：選択テキストを削除
+
+【カーソル移動】
+スペースキーを左右にスライドするだけでカーソルを1文字ずつ移動。
+指を離して精密にタップする必要はありません。
+
+【元に戻す（Undo）】
+⤺ をタップして、直前の入力・削除を1ステップずつ取り消せます。
+
+【テーマ10種】
+System · Terminal · Neon · Sakura · Midnight · Paper · Sunset ·
+Wood · Metal · Ice
+⤺ を長押しすることで、キーボードを離れずにテーマを切り替えられます。
+
+【プライバシー重視】
+Wipeはいかなるデータも収集・送信しません。すべての処理はデバイス上で完結します。
+
+---
+
+Wipeの使い方：設定 → 一般 → キーボード → キーボード → 新しいキーボードを追加
+→ Wipe
+
+キーワード（100文字以内）
+--------------------------
+キーボード,日本語,フリック,削除,スワイプ,IME,漢字,入力,カスタム,テーマ
+
+アップデート内容（ビルド74）
+----------------------------
+・修正：未確定のまま送信した後、変換バーに文字が残る問題を修正
+・修正：iOSの範囲選択に対してバックスペースが効かない問題を修正
+・Shiftを素早く2回押すCaps Lock対応
+・テーマ10種すべて利用可能に
+
+================================================================
+NOTES FOR APP STORE CONNECT
+================================================================
+
+Primary Category    : Utilities
+Secondary Category  : Productivity
+Age Rating          : 4+
+Price               : Free
+In-App Purchases    : None
+
+Marketing URL       : https://bigk4hunaburger.github.io/SwipeDeleteKeyboard/
+Support URL         : https://bigk4hunaburger.github.io/SwipeDeleteKeyboard/support.html
+Privacy Policy URL  : https://bigk4hunaburger.github.io/SwipeDeleteKeyboard/privacy.html
+
+Localizations to submit:
+  - English (U.S.)  ← primary
+  - Japanese
+
+================================================================

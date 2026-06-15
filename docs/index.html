@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wipe — Delete smarter. Type faster.</title>
+<meta name="description" content="Wipe is a custom iOS keyboard with swipe-to-delete, Japanese IME, and 10 themes.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fff;
+    --fg: #111;
+    --muted: #666;
+    --border: #e5e5e5;
+    --accent: #111;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 80px 24px 64px;
+    text-align: center;
+  }
+  .hero .app-name {
+    font-size: 4rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .hero .tagline {
+    font-size: 1.25rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  .hero .tagline strong {
+    color: var(--fg);
+  }
+  .badge {
+    display: inline-block;
+  }
+  .badge img {
+    height: 52px;
+  }
+
+  /* ── Features ── */
+  .features {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 32px;
+  }
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  .feature-list li {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .feature-list .icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+    margin-top: 2px;
+  }
+  .feature-list h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .feature-list p {
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  /* ── Themes ── */
+  .themes {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 24px;
+    text-align: center;
+  }
+  .themes-inner {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .themes h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .themes p {
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .theme-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .theme-chips span {
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* ── Setup ── */
+  .setup {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 64px 24px;
+  }
+  .setup h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+  .steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .steps li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .steps .num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .steps p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    padding-top: 4px;
+  }
+  .steps p strong {
+    color: var(--fg);
+  }
+
+  /* ── Lang toggle ── */
+  .lang-note {
+    border-top: 1px solid var(--border);
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+  .lang-note h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .lang-note p {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: #bbb;
+  }
+  footer a {
+    color: #999;
+    text-decoration: none;
+  }
+  footer a:hover {
+    text-decoration: underline;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d0d0d;
+      --fg: #f0f0f0;
+      --muted: #888;
+      --border: #222;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="app-name">Wipe</div>
+  <p class="tagline">
+    <strong>Delete smarter.</strong> Type faster.
+  </p>
+  <a class="badge" href="https://apps.apple.com/app/id6746787307" target="_blank" rel="noopener">
+    <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
+         alt="Download on the App Store">
+  </a>
+</section>
+
+<!-- Features -->
+<section class="features">
+  <p class="section-label">Features</p>
+  <ul class="feature-list">
+    <li>
+      <span class="icon">⌫</span>
+      <div>
+        <h3>Swipe to Delete</h3>
+        <p>Press and hold backspace, then slide left to select a range of text. Release to erase it all at once — no more tapping dozens of times.</p>
+      </div>
+    </li>
+    <li>
+      <span class="icon">あ</span>
+      <div>
+        <h3>Japanese IME</h3>
+        <p>Full 12-key flick input with real-time kanji conversion powered by AzooKey. Tap a candidate to confirm. Remaining characters stay in the bar for continued editing.</p>
+      </div>
+    </li>
+    <li>
+      <span class="icon">A</span>
+      <div>
+        <h3>English QWERTY</h3>
+        <p>Clean QWERTY layout with autocomplete. Double-tap Shift for Caps Lock. One letter shifts back automatically.</p>
+      </div>
+    </li>
+    <li>
+      <span class="icon">↔</span>
+      <div>
+        <h3>Cursor Control</h3>
+        <p>Slide left or right on the Space key to move the cursor precisely, one character at a time.</p>
+      </div>
+    </li>
+    <li>
+      <span class="icon">↩</span>
+      <div>
+        <h3>Undo</h3>
+        <p>Tap ⤺ to undo your last input or deletion, one step at a time.</p>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<!-- Themes -->
+<section class="themes">
+  <div class="themes-inner">
+    <h2>10 Themes</h2>
+    <p>Long-press ⤺ to cycle themes without leaving the keyboard.</p>
+    <div class="theme-chips">
+      <span>System</span>
+      <span>Terminal</span>
+      <span>Neon</span>
+      <span>Sakura</span>
+      <span>Midnight</span>
+      <span>Paper</span>
+      <span>Sunset</span>
+      <span>Wood</span>
+      <span>Metal</span>
+      <span>Ice</span>
+    </div>
+  </div>
+</section>
+
+<!-- Setup -->
+<section class="setup">
+  <h2>How to Enable</h2>
+  <ol class="steps">
+    <li>
+      <span class="num">1</span>
+      <p>Open <strong>Settings → General → Keyboard → Keyboards</strong></p>
+    </li>
+    <li>
+      <span class="num">2</span>
+      <p>Tap <strong>Add New Keyboard</strong> and select <strong>Wipe</strong></p>
+    </li>
+    <li>
+      <span class="num">3</span>
+      <p>Tap <strong>Allow Full Access</strong> to enable theme sync between the app and keyboard</p>
+    </li>
+  </ol>
+</section>
+
+<!-- Japanese note -->
+<section class="lang-note">
+  <h2>日本語</h2>
+  <p>
+    Wipe は⌫を押しながら左スライドで範囲削除できる iOS カスタムキーボードです。
+    日本語フリック入力（ひらがな・漢字変換）と英語 QWERTY に対応。
+    テーマは10種類。⤺ を長押しでキーボード内から切り替えられます。<br><br>
+    設定 → 一般 → キーボード → キーボードを追加 → Wipe
+  </p>
+</section>
+
+<!-- Footer -->
+<footer>
+  <a href="support.html">Support</a>
+  &nbsp;·&nbsp;
+  <a href="privacy.html">Privacy Policy</a>
+  &nbsp;·&nbsp;
+  &copy; 2026 Wipe
+</footer>
+
+</body>
+</html>
