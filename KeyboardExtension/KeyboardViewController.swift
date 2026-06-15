@@ -616,10 +616,8 @@ final class KeyboardViewController: UIInputViewController {
         super.textDidChange(textInput)
         // 自分自身のproxy操作は無視し、ホストアプリによる外部クリアのみ検知する
         guard !isApplyingChange, !composingText.isEmpty else { return }
-        // ホストアプリが送信などでテキストをクリアした場合、composingTextをリセット
-        let before = textDocumentProxy.documentContextBeforeInput ?? ""
-        let after = textDocumentProxy.documentContextAfterInput ?? ""
-        if before.isEmpty && after.isEmpty {
+        // markedTextRangeがnilならホストがmarked textを外部から消した(送信等)
+        if textDocumentProxy.markedTextRange == nil {
             composingText = ""
             candidates = []
             reloadCandidateBar()
@@ -1245,9 +1243,19 @@ final class KeyboardViewController: UIInputViewController {
             bsDeletedDuringHold = true
             return
         }
+        // iOSの範囲選択中はdeleteBackwardで選択テキストを削除
+        if let selected = textDocumentProxy.selectedText, !selected.isEmpty {
+            isApplyingChange = true
+            textDocumentProxy.deleteBackward()
+            isApplyingChange = false
+            bsDeletedDuringHold = true
+            return
+        }
         guard let before = textDocumentProxy.documentContextBeforeInput, !before.isEmpty else { return }
         let last = String(before.last!)
+        isApplyingChange = true
         textDocumentProxy.deleteBackward()
+        isApplyingChange = false
         undoStack.append(.deleted(last))
         trimUndo()
         bsDeletedDuringHold = true
